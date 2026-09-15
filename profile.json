@@ -1,0 +1,100 @@
+{
+  "name": "Yernar Ibadulla",
+  "position": "Junior+ AI Integration / Automation Developer",
+
+  "preferred_roles": [
+    "AI Integration Developer",
+    "AI Automation Developer",
+    "FullStack Developer",
+    "Backend Developer",
+    "Python Developer",
+    "Automation Developer",
+    "Data Analyst",
+    "QA Automation",
+    "IT Support"
+  ],
+
+  "skills": [
+    "Python",
+    "JavaScript",
+    "React",
+    "Node.js",
+    "SQL",
+    "REST API",
+    "HTML",
+    "CSS",
+    "Git",
+    "GitHub",
+    "Linux",
+    "LLM",
+    "OpenAI API",
+    "Prompt Engineering",
+    "Function Calling",
+    "Knowledge Base Design",
+    "Workflow Automation",
+    "n8n",
+    "Make",
+    "NextBot",
+    "amoCRM API",
+    "Google Calendar API",
+    "Google Sheets API",
+    "Kaspi API",
+    "Robokassa API",
+    "Power BI",
+    "Excel"
+  ],
+
+  "experience": "Junior+ with commercial experience in AI automation, API/CRM integrations, backend and fullstack development.",
+
+  "commercial_experience": [
+    "AI assistant development",
+    "CRM integration",
+    "Google Calendar integration",
+    "Function Calling",
+    "Kaspi API integration",
+    "n8n",
+    "Make",
+    "NextBot",
+    "QR tracking system",
+    "analytics dashboard",
+    "React",
+    "REST API integrations"
+  ],
+
+  "languages": {
+    "Russian": "Fluent",
+    "Kazakh": "Fluent",
+    "English": "B2/B2+"
+  },
+
+  "location": {
+    "city": "Astana",
+    "country": "Kazakhstan"
+  },
+
+  "salary_min": 300000,
+
+  "work_preferences": {
+    "office": ["Astana"],
+    "remote": ["Any city"],
+    "hybrid": ["Astana"]
+  },
+
+  "experience_policy": {
+    "1-3_years": "acceptable",
+    "3_plus_years": "usually_skip",
+    "6_plus_years": "skip",
+    "senior": "skip"
+  },
+
+  "forbidden_roles": [
+    "Senior",
+    "Lead",
+    "Director",
+    "CIO",
+    "Risk Manager",
+    "HR",
+    "Driver",
+    "non-IT"
+  ]
+}
