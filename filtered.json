@@ -1,0 +1,768 @@
+[
+  {
+    "id": "136262280",
+    "title": "ИИ разработчик",
+    "url": "https://aktau.hh.kz/vacancy/136262280?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 56,
+    "decision": "review",
+    "reasons": [
+      "Сильное совпадение по направлению: ии разработчик",
+      "Совпадает навыков: 8 (python, javascript, sql, rest api, api, linux)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136121898",
+    "title": "Junior Developer / Trainee (Affiliate marketing)",
+    "url": "https://aktau.hh.kz/vacancy/136121898?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 55,
+    "decision": "review",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 13 (python, javascript, react, node.js, node, sql)",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "135589280",
+    "title": "IT / AI-инженер",
+    "url": "https://aktau.hh.kz/vacancy/135589280?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 52,
+    "decision": "review",
+    "reasons": [
+      "Сильное совпадение по направлению: ai, ai-инженер",
+      "Совпадает навыков: 6 (python, sql, rest api, api, llm, openai)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136045412",
+    "title": "Координатор-преподаватель в школу программирования",
+    "url": "https://aktau.hh.kz/vacancy/136045412?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 46,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 8 (python, javascript, sql, html, css, git)",
+      "Зарплата соответствует ожиданиям: 350 000 ₸",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "135562045",
+    "title": "Python-разработчик",
+    "url": "https://aktau.hh.kz/vacancy/135562045?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 44,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, backend, python",
+      "Совпадает навыков: 7 (python, sql, rest api, api, git, linux)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "135540005",
+    "title": "Аналитик данных (работа в офисе)",
+    "url": "https://aktau.hh.kz/vacancy/135540005?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 43,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, автоматизация, python",
+      "Совпадает навыков: 4 (python, sql, power bi, excel)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Зарплата соответствует ожиданиям: 300 000 ₸",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136340212",
+    "title": "AI-Engineer",
+    "url": "https://aktau.hh.kz/vacancy/136340212?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 43,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 4 (python, sql, api, llm)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется высокий уровень английского"
+    ]
+  },
+  {
+    "id": "136141879",
+    "title": "Преподаватель по программированию",
+    "url": "https://aktau.hh.kz/vacancy/136141879?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 43,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 4 (python, javascript, html, java)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Зарплата соответствует ожиданиям: 350 000 ₸",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136339826",
+    "title": "Backend-разработчик",
+    "url": "https://aktau.hh.kz/vacancy/136339826?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 40,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, backend",
+      "Совпадает навыков: 5 (python, sql, api, llm, excel)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136153864",
+    "title": "Fullstack-разработчик",
+    "url": "https://aktau.hh.kz/vacancy/136153864?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 39,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: fullstack",
+      "Совпадает навыков: 7 (python, react, sql, rest api, api, git)",
+      "Зарплата выше минимальной: 1 000 000 ₸",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта"
+    ]
+  },
+  {
+    "id": "133406470",
+    "title": "Инженер-интегратор",
+    "url": "https://aktau.hh.kz/vacancy/133406470?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 38,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 4 (python, sql, linux, java)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136168728",
+    "title": "Главный эксперт в Направление депозитов и текущих счетов (аналитик)",
+    "url": "https://aktau.hh.kz/vacancy/136168728?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 38,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python, поддержка",
+      "Совпадает навыков: 4 (python, sql, power bi, excel)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "134375206",
+    "title": "Penetration Tester (Middle)",
+    "url": "https://aktau.hh.kz/vacancy/134375206?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 36,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 3 (python, linux, java)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136187078",
+    "title": "AI Implementation Engineer / Solutions Engineer",
+    "url": "https://aktau.hh.kz/vacancy/136187078?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 35,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 9 (python, sql, rest api, api, git, github)",
+      "Астана",
+      "Английский примерно соответствует профилю"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136359970",
+    "title": "Главный эксперт в Кредитные риски МСБ",
+    "url": "https://aktau.hh.kz/vacancy/136359970?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 34,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 2 (python, sql)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136174403",
+    "title": "Старший эксперт сопровождения риск-моделей и провизирования",
+    "url": "https://aktau.hh.kz/vacancy/136174403?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 34,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 2 (python, excel)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": []
+  },
+  {
+    "id": "136186853",
+    "title": "AI Agent Reliability Engineer / Harness Engineer Agentic AI",
+    "url": "https://aktau.hh.kz/vacancy/136186853?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 31,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 8 (python, sql, api, git, github, go)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "135408670",
+    "title": "Python-разработчик",
+    "url": "https://aktau.hh.kz/vacancy/135408670?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 29,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 7 (python, sql, rest api, api, git, linux)",
+      "Зарплата выше минимальной: 1 000 000 ₸",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта"
+    ]
+  },
+  {
+    "id": "136242463",
+    "title": "AI Инженер Senior",
+    "url": "https://aktau.hh.kz/vacancy/136242463?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 25,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 5 (python, sql, api, git, llm)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": [
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "136059147",
+    "title": "Software Engineer (Remarcable) - Astana - In office",
+    "url": "https://aktau.hh.kz/vacancy/136059147?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 24,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: software engineer",
+      "Совпадает навыков: 7 (python, sql, rest api, api, git, github)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта",
+      "Требуется высокий уровень английского"
+    ]
+  },
+  {
+    "id": "136256241",
+    "title": "Специалист по внедрению ИИ",
+    "url": "https://aktau.hh.kz/vacancy/136256241?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 21,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, автоматизация",
+      "Совпадает навыков: 8 (rest api, api, git, go, llm, n8n)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136294347",
+    "title": "ML-инженер",
+    "url": "https://aktau.hh.kz/vacancy/136294347?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 21,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 8 (python, sql, api, git, linux, llm)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136248749",
+    "title": "AI - Инженер Senior",
+    "url": "https://aktau.hh.kz/vacancy/136248749?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 21,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 3 (python, sql, llm)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": [
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "135553149",
+    "title": "Senior Fullstack-разработчик (Python / FastAPI / React / TypeScript)",
+    "url": "https://aktau.hh.kz/vacancy/135553149?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 20,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: fullstack",
+      "Совпадает навыков: 12 (python, javascript, react, node.js, node, sql)",
+      "Зарплата выше минимальной: 1 500 000 ₸",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта",
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "135847970",
+    "title": "Application Tech Support Engineer",
+    "url": "https://aktau.hh.kz/vacancy/135847970?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 19,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, automation",
+      "Совпадает навыков: 6 (python, sql, rest api, api, go, power bi)",
+      "Астана",
+      "Английский примерно соответствует профилю"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта"
+    ]
+  },
+  {
+    "id": "136357425",
+    "title": "Тестировщик QA",
+    "url": "https://aktau.hh.kz/vacancy/136357425?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 19,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, автоматизация",
+      "Совпадает навыков: 7 (python, sql, rest api, api, git, linux)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136263338",
+    "title": "QA Automation Trainee",
+    "url": "https://aktau.hh.kz/vacancy/136263338?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 19,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai, automation",
+      "Совпадает навыков: 7 (python, javascript, sql, api, git, java)",
+      "Зарплата соответствует ожиданиям: 300 000 ₸"
+    ],
+    "warnings": [
+      "Офлайн работа не в Астане"
+    ]
+  },
+  {
+    "id": "136320342",
+    "title": "Главный эксперт отдела поддержки продаж",
+    "url": "https://aktau.hh.kz/vacancy/136320342?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 18,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 4 (python, sql, power bi, excel)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": [
+      "Зарплата ниже желаемых 300 000 ₸"
+    ]
+  },
+  {
+    "id": "136059805",
+    "title": "Ведущий специалист по цифровой трансформации и внедрению искусственного интеллекта",
+    "url": "https://aktau.hh.kz/vacancy/136059805?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 17,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 6 (python, sql, api, prompt engineering, power bi, excel)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "135741076",
+    "title": "SecOps-инженер",
+    "url": "https://aktau.hh.kz/vacancy/135741076?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 17,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 6 (python, javascript, git, github, java, go)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта"
+    ]
+  },
+  {
+    "id": "136385703",
+    "title": "CVM Data Platform Engineer",
+    "url": "https://aktau.hh.kz/vacancy/136385703?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 15,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, automation",
+      "Совпадает навыков: 5 (python, sql, api, git, linux)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136352084",
+    "title": "Data Scientist",
+    "url": "https://aktau.hh.kz/vacancy/136352084?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 15,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 5 (python, sql, linux, java, go)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта"
+    ]
+  },
+  {
+    "id": "136306344",
+    "title": "Директор по информационным технологиям (CIO)",
+    "url": "https://aktau.hh.kz/vacancy/136306344?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 15,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, автоматизация, python",
+      "Совпадает навыков: 5 (python, sql, api, java, power bi)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136355491",
+    "title": "Эксперт Управления Производственной Разработки (КМГ Инжиниринг Астана)",
+    "url": "https://aktau.hh.kz/vacancy/136355491?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 13,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, backend, python",
+      "Совпадает навыков: 4 (python, sql, api, go)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136355780",
+    "title": "Аналитик закупок / Data Analyst (цифровизация закупочных процессов)",
+    "url": "https://aktau.hh.kz/vacancy/136355780?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 13,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 4 (python, sql, power bi, excel)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "135244712",
+    "title": "Системный администратор Unix-платформ",
+    "url": "https://aktau.hh.kz/vacancy/135244712?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 13,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, автоматизация, python",
+      "Совпадает навыков: 3 (python, sql, linux)",
+      "Астана",
+      "Английский примерно соответствует профилю"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136179424",
+    "title": "Главный риск- менеджер",
+    "url": "https://aktau.hh.kz/vacancy/136179424?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 11,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python, поддержка",
+      "Совпадает навыков: 3 (python, power bi, excel)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136253912",
+    "title": "Аналитик данных",
+    "url": "https://aktau.hh.kz/vacancy/136253912?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 11,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python, data analyst",
+      "Совпадает навыков: 3 (python, sql, power bi)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "135979374",
+    "title": "Data Engineer",
+    "url": "https://aktau.hh.kz/vacancy/135979374?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 11,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 3 (python, sql, api)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта"
+    ]
+  },
+  {
+    "id": "136187380",
+    "title": "AI Agent Training Engineer / Инженер по обучению ИИ-агентов (Middle/Senior)",
+    "url": "https://aktau.hh.kz/vacancy/136187380?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 10,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 10 (python, sql, rest api, api, git, github)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта",
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "136121500",
+    "title": "Senior / Lead AI Python Engineer",
+    "url": "https://aktau.hh.kz/vacancy/136121500?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 2,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: ai",
+      "Совпадает навыков: 6 (python, api, git, github, llm, openai)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта",
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "130510313",
+    "title": "Senior Data Software Engineer (Big Data Engineer)",
+    "url": "https://aktau.hh.kz/vacancy/130510313?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 2,
+    "decision": "skip",
+    "reasons": [
+      "Сильное совпадение по направлению: software engineer",
+      "Совпадает навыков: 6 (python, sql, api, git, java, excel)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта",
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "136398788",
+    "title": "Руководитель отдела риск-анализа, Risk Manager",
+    "url": "https://aktau.hh.kz/vacancy/136398788?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python",
+      "Совпадает навыков: 6 (python, sql, api, go, power bi, excel)",
+      "Требуемый опыт (1–3 года) считаем подходящим",
+      "Астана"
+    ],
+    "warnings": [
+      "Вакансия уровня Senior/Lead",
+      "Неподходящее направление: risk manager, risk, водитель"
+    ]
+  },
+  {
+    "id": "136341145",
+    "title": "Intern - Assurance Advisory",
+    "url": "https://aktau.hh.kz/vacancy/136341145?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 3 (python, go, excel)"
+    ],
+    "warnings": [
+      "Зарплата ниже желаемых 300 000 ₸",
+      "Офлайн работа не в Астане",
+      "Требуется высокий уровень английского"
+    ]
+  },
+  {
+    "id": "136373244",
+    "title": "Руководитель отдела ПО (программное обеспечение)",
+    "url": "https://aktau.hh.kz/vacancy/136373244?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, python, поддержка",
+      "Совпадает навыков: 1 (python)",
+      "Зарплата выше минимальной: 700 000 ₸",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта",
+      "Вакансия уровня Senior/Lead",
+      "Неподходящее направление: водитель"
+    ]
+  },
+  {
+    "id": "135320544",
+    "title": "Senior Data Engineer",
+    "url": "https://aktau.hh.kz/vacancy/135320544?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, automation",
+      "Совпадает навыков: 5 (python, sql, git, github, go)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта",
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "136252581",
+    "title": "Инженер по безопасности приложений (Application Security Engineer (Middle+ / Senior))",
+    "url": "https://aktau.hh.kz/vacancy/136252581?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, backend",
+      "Совпадает навыков: 8 (python, javascript, rest api, api, git, github)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта",
+      "Вакансия уровня Senior/Lead",
+      "Требуется высокий уровень английского"
+    ]
+  },
+  {
+    "id": "135353953",
+    "title": "Senior SecOps / Threat Hunting / Detection Engineer",
+    "url": "https://aktau.hh.kz/vacancy/135353953?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 2 (python, linux)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта",
+      "Вакансия уровня Senior/Lead",
+      "Неподходящее направление: hr"
+    ]
+  },
+  {
+    "id": "136317042",
+    "title": "Senior DevOps Engineer",
+    "url": "https://aktau.hh.kz/vacancy/136317042?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ai, ии, python",
+      "Совпадает навыков: 6 (python, sql, git, github, linux, go)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 6+ лет опыта",
+      "Вакансия уровня Senior/Lead"
+    ]
+  },
+  {
+    "id": "136122532",
+    "title": "Developer of Antidetect Browser (Chromium based, C++)",
+    "url": "https://aktau.hh.kz/vacancy/136122532?query=Python&hhtmFrom=vacancy_search_list",
+    "score": 0,
+    "decision": "skip",
+    "reasons": [
+      "Подходящее направление: ии, automation, python",
+      "Совпадает навыков: 5 (python, javascript, api, linux, java)",
+      "Астана"
+    ],
+    "warnings": [
+      "Требуется около 3+ лет опыта",
+      "Неподходящее направление: hr"
+    ]
+  }
+]
