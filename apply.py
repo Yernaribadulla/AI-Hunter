@@ -16,6 +16,7 @@ from playwright.async_api import async_playwright
 
 from candidate import CANDIDATE, CANDIDATE_PROFILE
 from models import Decision, VacancyAnalysis
+from gui_bridge import request as gui_request
 from safety import evaluate as evaluate_safety
 from config import (
     AREA_ASTANA,
@@ -507,6 +508,13 @@ def choose_application_mode():
 
 
 async def review_cover_letter(cover_letter):
+    if os.getenv("JOBHUNTER_GUI_BRIDGE_PORT"):
+        response = await asyncio.to_thread(
+            gui_request,
+            {"type": "application_review", "cover_letter": cover_letter},
+        )
+        return response.get("action", "skip"), response.get("instruction", "")
+
     print()
     print("РЕЖИМ ПОДТВЕРЖДЕНИЯ")
     print("Нажмите ENTER, чтобы отправить этот отклик.")
@@ -3595,9 +3603,8 @@ async def main():
                 RESULTS_FILE
             )
 
-            input(
-                "\nНажми ENTER для завершения..."
-            )
+            if not os.getenv("JOBHUNTER_GUI_BRIDGE_PORT"):
+                input("\nНажми ENTER для завершения...")
 
         finally:
 

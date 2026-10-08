@@ -5,6 +5,9 @@ import os
 import subprocess
 import sys
 import webbrowser
+import queue
+import socketserver
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import QProcess, Qt, QTimer
@@ -13,7 +16,7 @@ from PySide6.QtWidgets import (
     QApplication, QComboBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QLineEdit, QMainWindow, QPushButton, QSplitter, QStackedWidget,
     QTableWidget, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget, QMessageBox,
-    QRadioButton, QButtonGroup,
+    QRadioButton, QButtonGroup, QInputDialog,
 )
 
 import config
@@ -22,6 +25,27 @@ from candidate import CANDIDATE
 
 ROOT = Path(__file__).resolve().parent
 STATE_FILE = ROOT / "results.jsonl"
+
+
+class BridgeHandler(socketserver.StreamRequestHandler):
+    def handle(self):
+        try:
+            payload = json.loads(self.rfile.readline().decode("utf-8"))
+            event = threading.Event()
+            response = {}
+            self.server.requests.put((payload, event, response))
+            event.wait()
+            self.wfile.write((json.dumps(response, ensure_ascii=False) + "\n").encode("utf-8"))
+        except Exception as exc:
+            self.wfile.write((json.dumps({"action": "skip", "error": str(exc)}) + "\n").encode("utf-8"))
+
+
+class BridgeServer(socketserver.ThreadingTCPServer):
+    allow_reuse_address = True
+
+    def __init__(self):
+        self.requests = queue.Queue()
+        super().__init__(("127.0.0.1", 0), BridgeHandler)
 
 
 class RunPanel(QWidget):
@@ -90,6 +114,7 @@ class RunPanel(QWidget):
         env = self.process.processEnvironment()
         env.insert("JOBHUNTER_GUI_MODE", self.mode.currentData())
         env.insert("JOBHUNTER_GUI_CONFIRMED", "1")
+        env.insert("JOBHUNTER_GUI_BRIDGE_PORT", str(self.window.bridge.server_address[1]))
         self.process.setProcessEnvironment(env)
         self.process.setWorkingDirectory(str(ROOT))
         self.process.setProgram(sys.executable)
@@ -301,6 +326,12 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("AI-Hunter")
         self.resize(1180, 760)
+        self.bridge = BridgeServer()
+        self.bridge_thread = threading.Thread(target=self.bridge.serve_forever, daemon=True)
+        self.bridge_thread.start()
+        self.bridge_timer = QTimer(self)
+        self.bridge_timer.timeout.connect(self.process_bridge_events)
+        self.bridge_timer.start(100)
         self.run_panel = RunPanel(self)
         self.vacancies = VacanciesPanel()
         self.stack = QStackedWidget()
@@ -331,6 +362,32 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self.stack)
         splitter.setSizes([180, 1000])
         self.setCentralWidget(splitter)
+
+    def process_bridge_events(self):
+        try:
+            payload, event, response = self.bridge.requests.get_nowait()
+        except queue.Empty:
+            return
+        if payload.get("type") == "application_review":
+            dialog = QMessageBox(self)
+            dialog.setWindowTitle("Application ready")
+            dialog.setText("Review the prepared cover letter before sending.")
+            dialog.setDetailedText(payload.get("cover_letter", ""))
+            send = dialog.addButton("Send", QMessageBox.AcceptRole)
+            skip = dialog.addButton("Skip", QMessageBox.DestructiveRole)
+            rewrite = dialog.addButton("Rewrite", QMessageBox.ActionRole)
+            dialog.exec()
+            clicked = dialog.clickedButton()
+            if clicked is send:
+                response.update(action="send")
+            elif clicked is rewrite:
+                instruction, accepted = QInputDialog.getText(
+                    self, "Rewrite cover letter", "Instruction for the model:"
+                )
+                response.update(action="rewrite" if accepted and instruction.strip() else "skip", instruction=instruction)
+            else:
+                response.update(action="skip")
+        event.set()
 
     def show_mode(self):
         self.stack.setCurrentWidget(self.mode_panel)
