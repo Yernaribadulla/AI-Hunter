@@ -17,6 +17,7 @@ from playwright.async_api import async_playwright
 from candidate import CANDIDATE, CANDIDATE_PROFILE
 from models import Decision, VacancyAnalysis
 from gui_bridge import request as gui_request
+from events import PipelineEvent, emit_event
 from safety import evaluate as evaluate_safety
 from config import (
     AREA_ASTANA,
@@ -3230,6 +3231,8 @@ async def process_vacancy(
 
 async def main():
 
+    emit_event(PipelineEvent("run_started", "Starting AI-Hunter core..."))
+
     print("=" * 70)
     print("JOBHUNTER — AI АВТООТКЛИК HH")
     print("=" * 70)
@@ -3319,6 +3322,7 @@ async def main():
 
         print()
         print("Запускаю браузер...")
+        emit_event(PipelineEvent("browser_starting", "Starting browser and preparing HH session"))
 
         context = (
             await p.chromium.launch_persistent_context(
@@ -3363,6 +3367,7 @@ async def main():
 
             # До ручного подтверждения вакансии не собираются и не анализируются.
             await wait_for_hh_login(page)
+            emit_event(PipelineEvent("hh_ready", "HH session ready"))
             application_mode = choose_application_mode()
 
             # ------------------------------------------------
@@ -3426,6 +3431,12 @@ async def main():
 
                         break
 
+            emit_event(PipelineEvent(
+                "vacancies_collected",
+                f"Collected {len(all_vacancies)} vacancies",
+                total=len(all_vacancies),
+            ))
+
             # ------------------------------------------------
             # STATS
             # ------------------------------------------------
@@ -3453,11 +3464,24 @@ async def main():
             # ------------------------------------------------
 
             results = []
+            counters = {"processed": 0, "apply": 0, "review": 0, "reject": 0}
 
             for index, vacancy in enumerate(
                 all_vacancies,
                 start=1
             ):
+
+                title = vacancy.get("title", vacancy.get("name", ""))
+                company = vacancy.get("company", vacancy.get("employer", ""))
+                emit_event(PipelineEvent(
+                    "vacancy_started",
+                    f"Analyzing vacancy {index}/{len(all_vacancies)}: {title}",
+                    vacancy_id=str(vacancy.get("id", "")),
+                    vacancy_index=index,
+                    total=len(all_vacancies),
+                    title=title,
+                    company=company,
+                ))
 
                 print()
                 print("=" * 70)
@@ -3498,6 +3522,30 @@ async def main():
                     vacancy,
                     result
                 )
+
+                decision = result.get("decision", "reject")
+                counters["processed"] += 1
+                if decision == "apply":
+                    counters["apply"] += 1
+                elif decision == "manual_review":
+                    counters["review"] += 1
+                else:
+                    counters["reject"] += 1
+                emit_event(PipelineEvent(
+                    "decision_made",
+                    f"Decision: {decision.upper()} - {title} - score {result.get('score', 0)}",
+                    vacancy_id=str(vacancy.get("id", "")),
+                    vacancy_index=index,
+                    total=len(all_vacancies),
+                    processed=counters["processed"],
+                    apply=counters["apply"],
+                    review=counters["review"],
+                    reject=counters["reject"],
+                    score=result.get("score"),
+                    decision=decision,
+                    title=title,
+                    company=company,
+                ))
 
                 # Если реально отправили —
                 # запоминаем ID сразу.
@@ -3596,6 +3644,8 @@ async def main():
                     0
                 )
             )
+
+            emit_event(PipelineEvent("run_finished", "Run finished", **counters))
 
             print()
             print(

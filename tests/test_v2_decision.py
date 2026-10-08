@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from apply import apply_safety_filter, choose_application_mode, parse_llm_response
 from models import VacancyAnalysis
+from events import PipelineEvent
 
 
 def analysis(**overrides):
@@ -22,6 +23,15 @@ def analysis(**overrides):
 
 
 class DecisionEngineTests(unittest.TestCase):
+    def test_pipeline_event_carries_real_counters(self):
+        events = [
+            PipelineEvent("run_started", "start"),
+            PipelineEvent("decision_made", "apply", processed=1, apply=1, review=0, reject=0),
+            PipelineEvent("decision_made", "review", processed=2, apply=1, review=1, reject=0),
+            PipelineEvent("decision_made", "reject", processed=3, apply=1, review=1, reject=1),
+        ]
+        last = events[-1]
+        self.assertEqual((last.processed, last.apply, last.review, last.reject), (3, 1, 1, 1))
     def test_gui_mode_selection_does_not_read_stdin(self):
         with mock.patch.dict(os.environ, {"JOBHUNTER_GUI_MODE": "manual"}):
             with mock.patch("builtins.input", side_effect=AssertionError("GUI must not read stdin")):

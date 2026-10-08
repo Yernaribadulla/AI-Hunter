@@ -53,6 +53,7 @@ class RunPanel(QWidget):
         super().__init__()
         self.window = window
         self.process = None
+        self.event_buffer = ""
         self.events = QTextEdit()
         self.events.setReadOnly(True)
         self.events.setObjectName("eventLog")
@@ -114,6 +115,7 @@ class RunPanel(QWidget):
         env = self.process.processEnvironment()
         env.insert("JOBHUNTER_GUI_MODE", self.mode.currentData())
         env.insert("JOBHUNTER_GUI_CONFIRMED", "1")
+        env.insert("JOBHUNTER_GUI_EVENTS", "1")
         env.insert("JOBHUNTER_GUI_BRIDGE_PORT", str(self.window.bridge.server_address[1]))
         self.process.setProcessEnvironment(env)
         self.process.setWorkingDirectory(str(ROOT))
@@ -129,11 +131,36 @@ class RunPanel(QWidget):
             return
         data = bytes(self.process.readAllStandardOutput()).decode("utf-8", "replace")
         error = bytes(self.process.readAllStandardError()).decode("utf-8", "replace")
-        text = (data + error).strip()
+        self.event_buffer += error
+        event_lines = self.event_buffer.split("\n")
+        self.event_buffer = event_lines.pop()
+        for line in event_lines:
+            if line.startswith("__AIH_EVENT__"):
+                try:
+                    self.handle_pipeline_event(json.loads(line[len("__AIH_EVENT__"):]))
+                except json.JSONDecodeError:
+                    self.events.append("ERROR  Invalid pipeline event")
+            elif line.strip():
+                self.events.append(line)
+        text = data.strip()
         if text:
             self.events.append(text)
-            self.update_activity(text)
+        if data or error:
+            self.events.ensureCursorVisible()
             self.window.refresh_history()
+
+    def handle_pipeline_event(self, event):
+        message = event.get("message", event.get("type", ""))
+        level = "DECISION" if event.get("type") == "decision_made" else "INFO"
+        self.events.append(f"{event.get('timestamp', '')}  {level:<8} {message}")
+        if event.get("processed") is not None:
+            self.processed.setText(f"Processed\n{event['processed']}")
+            self.applied.setText(f"APPLY\n{event.get('apply', 0)}")
+            self.reviewed.setText(f"REVIEW\n{event.get('review', 0)}")
+            self.rejected.setText(f"REJECT\n{event.get('reject', 0)}")
+        if event.get("title"):
+            self.current.setText(message)
+        self.events.ensureCursorVisible()
 
     def update_activity(self, text):
         compact = " ".join(text.split())
