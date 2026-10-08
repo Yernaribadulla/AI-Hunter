@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import webbrowser
 from pathlib import Path
 
 from PySide6.QtCore import QProcess, Qt, QTimer
@@ -12,6 +13,7 @@ from PySide6.QtWidgets import (
     QApplication, QComboBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
     QLabel, QLineEdit, QMainWindow, QPushButton, QSplitter, QStackedWidget,
     QTableWidget, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget, QMessageBox,
+    QRadioButton, QButtonGroup,
 )
 
 import config
@@ -41,6 +43,18 @@ class RunPanel(QWidget):
         self.start_button.clicked.connect(self.start)
         self.stop_button.clicked.connect(self.stop)
 
+        self.processed = QLabel("Processed\n0")
+        self.applied = QLabel("APPLY\n0")
+        self.reviewed = QLabel("REVIEW\n0")
+        self.rejected = QLabel("REJECT\n0")
+        metrics = QHBoxLayout()
+        for widget in (self.processed, self.applied, self.reviewed, self.rejected):
+            widget.setObjectName("metric")
+            metrics.addWidget(widget)
+        metrics.addStretch()
+
+        self.current = QLabel("Waiting to start")
+        self.current.setObjectName("currentActivity")
         controls = QHBoxLayout()
         controls.addWidget(QLabel("Application mode"))
         controls.addWidget(self.mode)
@@ -58,12 +72,17 @@ class RunPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.addLayout(header)
         layout.addLayout(controls)
+        layout.addLayout(metrics)
+        layout.addWidget(QLabel("Current activity"))
+        layout.addWidget(self.current)
+        layout.addWidget(QLabel("Activity log"))
         layout.addWidget(self.events, 1)
 
     def start(self):
         if self.process:
             return
         self.events.append("Starting AI-Hunter core...")
+        self.current.setText("Starting browser and preparing HH session")
         self.status.setText("Running")
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
@@ -87,7 +106,24 @@ class RunPanel(QWidget):
         text = (data + error).strip()
         if text:
             self.events.append(text)
+            self.update_activity(text)
             self.window.refresh_history()
+
+    def update_activity(self, text):
+        compact = " ".join(text.split())
+        if compact:
+            self.current.setText(compact[-220:])
+        counts = {"APPLY": 0, "REVIEW": 0, "REJECT": 0}
+        for line in self.events.toPlainText().splitlines():
+            upper = line.upper()
+            for key in counts:
+                if key in upper:
+                    counts[key] += 1
+        processed = sum(counts.values())
+        self.processed.setText(f"Processed\n{processed}")
+        self.applied.setText(f"APPLY\n{counts['APPLY']}")
+        self.reviewed.setText(f"REVIEW\n{counts['REVIEW']}")
+        self.rejected.setText(f"REJECT\n{counts['REJECT']}")
 
     def finished(self, code, _status):
         self.events.append(f"Run finished with exit code {code}.")
@@ -193,14 +229,84 @@ class SettingsPanel(QWidget):
         layout.addStretch()
 
 
+class AuthPanel(QWidget):
+    def __init__(self, on_confirm):
+        super().__init__()
+        title = QLabel("AI-Hunter")
+        title.setObjectName("pageTitle")
+        heading = QLabel("HH account")
+        heading.setObjectName("sectionTitle")
+        text = QLabel(
+            "The browser will open HeadHunter. Sign in to the account you want to use, "
+            "then return here and confirm the session."
+        )
+        text.setWordWrap(True)
+        open_button = QPushButton("Open HH")
+        open_button.clicked.connect(lambda: webbrowser.open(config.HH_URL))
+        confirm = QPushButton("Подтвердить")
+        confirm.setObjectName("primaryButton")
+        confirm.clicked.connect(on_confirm)
+        layout = QVBoxLayout(self)
+        layout.addWidget(title)
+        layout.addSpacing(28)
+        layout.addWidget(heading)
+        layout.addWidget(text)
+        layout.addSpacing(12)
+        layout.addWidget(open_button, 0, Qt.AlignLeft)
+        layout.addWidget(confirm, 0, Qt.AlignLeft)
+        layout.addStretch()
+
+
+class ModePanel(QWidget):
+    def __init__(self, on_continue, on_back):
+        super().__init__()
+        title = QLabel("Application mode")
+        title.setObjectName("pageTitle")
+        self.auto = QRadioButton("Automatic submission")
+        self.auto.setChecked(True)
+        self.manual = QRadioButton("Confirm before submission")
+        self.group = QButtonGroup(self)
+        self.group.addButton(self.auto)
+        self.group.addButton(self.manual)
+        note = QLabel(
+            "Automatic sends accepted applications after all checks. "
+            "Confirmation mode pauses before the final click."
+        )
+        note.setWordWrap(True)
+        back = QPushButton("Back")
+        back.clicked.connect(on_back)
+        proceed = QPushButton("Continue")
+        proceed.setObjectName("primaryButton")
+        proceed.clicked.connect(lambda: on_continue("auto" if self.auto.isChecked() else "manual"))
+        buttons = QHBoxLayout()
+        buttons.addWidget(back)
+        buttons.addStretch()
+        buttons.addWidget(proceed)
+        layout = QVBoxLayout(self)
+        layout.addWidget(title)
+        layout.addWidget(QLabel("Choose how accepted applications should be sent."))
+        layout.addSpacing(16)
+        layout.addWidget(self.auto)
+        layout.addWidget(note)
+        layout.addSpacing(14)
+        layout.addWidget(self.manual)
+        layout.addWidget(QLabel("Review, skip or rewrite each prepared cover letter before sending."))
+        layout.addStretch()
+        layout.addLayout(buttons)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("AI-Hunter")
         self.resize(1180, 760)
-        self.vacancies = VacanciesPanel()
         self.run_panel = RunPanel(self)
+        self.vacancies = VacanciesPanel()
         self.stack = QStackedWidget()
+        self.auth = AuthPanel(self.show_mode)
+        self.mode_panel = ModePanel(self.start_from_mode, lambda: self.stack.setCurrentWidget(self.auth))
+        self.stack.addWidget(self.auth)
+        self.stack.addWidget(self.mode_panel)
         self.stack.addWidget(self.run_panel)
         self.stack.addWidget(self.vacancies)
         self.settings = SettingsPanel()
@@ -210,7 +316,7 @@ class MainWindow(QMainWindow):
         brand = QLabel("AI-Hunter")
         brand.setObjectName("brand")
         nav.addWidget(brand)
-        for label, index in (("Run", 0), ("Vacancies", 1), ("Settings", 2)):
+        for label, index in (("Run", 2), ("Vacancies", 3), ("Settings", 4)):
             button = QPushButton(label)
             button.setObjectName("navButton")
             button.clicked.connect(lambda _checked=False, i=index: self.stack.setCurrentIndex(i))
@@ -224,6 +330,14 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self.stack)
         splitter.setSizes([180, 1000])
         self.setCentralWidget(splitter)
+
+    def show_mode(self):
+        self.stack.setCurrentWidget(self.mode_panel)
+
+    def start_from_mode(self, mode):
+        self.run_panel.mode.setCurrentIndex(0 if mode == "auto" else 1)
+        self.stack.setCurrentWidget(self.run_panel)
+        QTimer.singleShot(100, self.run_panel.start)
 
     def refresh_history(self):
         self.vacancies.load()
@@ -247,6 +361,10 @@ QMainWindow { background: #f5f6f7; }
 #navButton:hover { background: #dce2e7; }
 #pageTitle { font-size: 20px; font-weight: 600; padding: 14px 0 8px; }
 #statusLabel { color: #356b58; font-weight: 600; }
+#sectionTitle { font-size: 16px; font-weight: 600; }
+#metric { background: #ffffff; border: 1px solid #cbd1d6; border-radius: 3px; padding: 9px 18px; min-width: 90px; }
+#currentActivity { background: #ffffff; border-left: 3px solid #5a8f82; padding: 10px; }
+#primaryButton { background: #356b58; color: #ffffff; border-color: #356b58; }
 QPushButton { background: #ffffff; border: 1px solid #b9c1c8; border-radius: 4px; padding: 7px 13px; }
 QPushButton:hover { background: #edf1f3; }
 QLineEdit, QComboBox { background: #ffffff; border: 1px solid #b9c1c8; border-radius: 3px; padding: 7px; }

@@ -3,9 +3,14 @@ import json
 import re
 import requests
 import os
+import sys
 
 from pathlib import Path
 from datetime import datetime
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from playwright.async_api import async_playwright
 

@@ -186,7 +186,7 @@ Start LM Studio, load `qwen/qwen3-4b-2507`, enable the local server, then run:
 python apply.py
 ```
 
-To start the desktop operator interface on Windows, run `run.bat` or use `python desktop.py`. The GUI is a thin operator layer over the existing `apply.py` process; it does not duplicate LLM, safety or browser logic. The CLI remains available for development and debugging.
+To start the desktop operator interface on Windows, run `run.bat` or use `python desktop.py`. The GUI first asks the operator to verify the HH account, then selects the application mode, and only then starts the core run. It is a thin operator layer over the existing `apply.py` process; it does not duplicate LLM, safety or browser logic. The CLI remains available for development and debugging.
 
 The program prints the selected model, resume paths, search progress, analysis result, cover letter and final status for each vacancy.
 
