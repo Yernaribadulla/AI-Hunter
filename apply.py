@@ -450,12 +450,12 @@ def check_lm_studio():
         return False
 
 
-def wait_for_hh_login(page):
+async def wait_for_hh_login(page):
     """Останавливает pipeline до ручного входа в HH."""
     if os.getenv("JOBHUNTER_GUI_CONFIRMED") == "1":
         print("HH-сессия подтверждена через GUI.")
         try:
-            page.reload(wait_until="domcontentloaded", timeout=30000)
+            await page.reload(wait_until="domcontentloaded", timeout=30000)
         except Exception as e:
             raise RuntimeError(f"Не удалось проверить сессию HH после GUI-подтверждения: {e}") from e
         return
@@ -475,7 +475,7 @@ def wait_for_hh_login(page):
         print('Ожидается команда "Подтвердить". Браузер оставлен открытым.')
 
     try:
-        page.reload(wait_until="domcontentloaded", timeout=30000)
+        await page.reload(wait_until="domcontentloaded", timeout=30000)
     except Exception as e:
         raise RuntimeError(f"Не удалось проверить сессию HH после входа: {e}") from e
 
@@ -3354,7 +3354,7 @@ async def main():
             )
 
             # До ручного подтверждения вакансии не собираются и не анализируются.
-            wait_for_hh_login(page)
+            await wait_for_hh_login(page)
             application_mode = choose_application_mode()
 
             # ------------------------------------------------
