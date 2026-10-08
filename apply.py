@@ -99,6 +99,10 @@ LM_MODEL = "qwen/qwen3-4b-2507"
 BASE_DIR = Path(__file__).resolve().parent
 
 SESSION_DIR = BASE_DIR / "hh_session"
+# Совместимость со старой структурой проекта, где сессия лежала в JobHunter/hh_session.
+LEGACY_SESSION_DIR = BASE_DIR / "JobHunter" / "hh_session"
+if not SESSION_DIR.exists() and LEGACY_SESSION_DIR.exists():
+    SESSION_DIR = LEGACY_SESSION_DIR
 RESULTS_FILE = BASE_DIR / "results.jsonl"
 
 HH_URL = "https://astana.hh.kz/"
@@ -125,7 +129,7 @@ RESUME_PATH_ENG = Path(os.getenv("JOBHUNTER_RESUME_ENG", str(RESUME_PATH_ENG)))
 # CANDIDATE
 # ============================================================
 
-CANDIDATE_PROFILE = """
+LEGACY_CANDIDATE_PROFILE = """
 NAME:
 Ернар
 
@@ -403,6 +407,8 @@ RULES:
 # ============================================================
 
 ACTIVE_MODEL = None
+APPLICATION_MODE = "auto"
+SESSION_LLM_INSTRUCTION = ""
 
 
 # ============================================================
@@ -732,6 +738,40 @@ def wait_for_hh_login(page):
         raise RuntimeError(f"Не удалось проверить сессию HH после входа: {e}") from e
 
     print("Сессия HH подтверждена. Переходим к сбору и анализу вакансий.")
+
+
+def choose_application_mode():
+    print()
+    print("=" * 70)
+    print("РЕЖИМ ОТПРАВКИ ОТКЛИКОВ")
+    print("=" * 70)
+    print("1. Автоматическая отправка откликов")
+    print("2. Отправка откликов только при подтверждении")
+
+    while True:
+        choice = input("\nВыберите режим (1/2): ").strip()
+        if choice == "1":
+            print("Выбран автоматический режим.")
+            return "auto"
+        if choice == "2":
+            print("Выбран режим подтверждения каждого отклика.")
+            return "manual"
+        print("Введите 1 или 2.")
+
+
+async def review_cover_letter(cover_letter):
+    print()
+    print("РЕЖИМ ПОДТВЕРЖДЕНИЯ")
+    print("Нажмите ENTER, чтобы отправить этот отклик.")
+    print("Введите инструкцию для модели, чтобы переписать письмо для этой сессии.")
+    print("Введите 'пропустить', чтобы не отправлять эту вакансию.")
+    answer = input("\nВаш выбор: ").strip()
+
+    if not answer:
+        return "send", ""
+    if answer.casefold() in {"пропустить", "skip", "отмена", "cancel"}:
+        return "skip", ""
+    return "regenerate", answer
 
 
 # ============================================================
@@ -1230,7 +1270,7 @@ DECISION
 should_apply = true,
 если одновременно:
 
-score >= 75
+score >= 65
 direction_match = true
 hard_blocker = false
 нет обязательного Senior/Lead/Principal production experience,
@@ -1467,7 +1507,8 @@ OUTPUT
 
 def build_vacancy_prompt(
     vacancy_data,
-    is_remote
+    is_remote,
+    session_instruction=""
 ):
 
     remote_status = (
@@ -1535,10 +1576,10 @@ DECISION
 ============================================================
 
 Normal vacancy:
-apply threshold = 75.
+apply threshold = %s.
 
 Remote vacancy:
-apply threshold = 60.
+apply threshold = %s.
 
 Do not reject solely because critical_missing_skills is non-empty.
 
@@ -1559,6 +1600,13 @@ Kazakh vacancy -> Kazakh letter.
 English vacancy -> English letter.
 
 Do not use English merely because the title is English.
+
+SESSION-ONLY USER INSTRUCTION
+=============================
+%s
+
+Apply this instruction only to the current cover letter generation session.
+Do not invent experience, companies, technologies or achievements.
 
 ============================================================
 OUTPUT
@@ -1587,6 +1635,9 @@ Return ONLY valid JSON.
         vacancy_data.get("title", ""),
         vacancy_data.get("description", "")[:20000],
         remote_status,
+        MIN_SCORE_TO_APPLY,
+        REMOTE_MIN_SCORE_TO_APPLY,
+        session_instruction or "No additional instruction.",
     )
 
 
@@ -2076,7 +2127,8 @@ def apply_safety_filter(
 # ============================================================
 
 async def analyze_vacancy(
-    vacancy_data
+    vacancy_data,
+    session_instruction=""
 ):
 
     is_remote = detect_remote(
@@ -2093,7 +2145,8 @@ async def analyze_vacancy(
 
     prompt = build_vacancy_prompt(
         vacancy_data,
-        is_remote
+        is_remote,
+        session_instruction
     )
 
     try:
@@ -2941,8 +2994,10 @@ async def collect_vacancies(
 async def process_vacancy(
     page,
     vacancy,
-    processed_ids
+    processed_ids,
+    application_mode
 ):
+    global SESSION_LLM_INSTRUCTION
 
     print()
     print()
@@ -3032,7 +3087,8 @@ async def process_vacancy(
     # --------------------------------------------------------
 
     analysis = await analyze_vacancy(
-        vacancy_data
+        vacancy_data,
+        SESSION_LLM_INSTRUCTION
     )
 
     if "error" in analysis:
@@ -3172,30 +3228,61 @@ async def process_vacancy(
     # APPLY
     # --------------------------------------------------------
 
-    cover_letter = (
-        analysis.get(
-            "cover_letter",
-            ""
-        )
-        .strip()
-    )
-
-    if not cover_letter:
-
-        print(
-            "→ ОТКАЗ: нет сопроводительного."
+    while True:
+        cover_letter = (
+            analysis.get(
+                "cover_letter",
+                ""
+            )
+            .strip()
         )
 
-        return {
-            "status": "no_cover_letter",
-            **analysis,
-        }
+        if not cover_letter:
+            print("→ ОТКАЗ: нет сопроводительного.")
+            return {
+                "status": "no_cover_letter",
+                **analysis,
+            }
 
-    print()
-    print("СОПРОВОДИТЕЛЬНОЕ:")
-    print("-" * 60)
-    print(cover_letter)
-    print("-" * 60)
+        print()
+        print("СОПРОВОДИТЕЛЬНОЕ:")
+        print("-" * 60)
+        print(cover_letter)
+        print("-" * 60)
+
+        if application_mode != "manual":
+            break
+
+        review_action, instruction = await review_cover_letter(cover_letter)
+
+        if review_action == "send":
+            break
+
+        if review_action == "skip":
+            return {
+                "status": "manual_skipped",
+                **analysis,
+            }
+
+        SESSION_LLM_INSTRUCTION = instruction
+        print("Перегенерирую письмо с инструкцией только для этой сессии...")
+        analysis = await analyze_vacancy(
+            vacancy_data,
+            SESSION_LLM_INSTRUCTION
+        )
+
+        if "error" in analysis:
+            return {
+                "status": analysis["error"],
+                "reason": analysis.get("reason", ""),
+            }
+
+        if analysis.get("decision") != "apply":
+            print("Модель не разрешила отправку после обновления письма.")
+            return {
+                "status": "rejected_after_manual_edit",
+                **analysis,
+            }
 
     # --------------------------------------------------------
     # RESPONSE BUTTON
@@ -3474,6 +3561,7 @@ async def main():
 
             # До ручного подтверждения вакансии не собираются и не анализируются.
             wait_for_hh_login(page)
+            application_mode = choose_application_mode()
 
             # ------------------------------------------------
             # COLLECT
@@ -3581,7 +3669,8 @@ async def main():
                         await process_vacancy(
                             page,
                             vacancy,
-                            processed_ids
+                                processed_ids,
+                                application_mode
                         )
                     )
 

@@ -38,7 +38,7 @@ Rule-based safety filter
 Cover-letter language validation
        |
        v
-Human-confirmed browser application
+Application mode: automatic or confirmation-first
        |
        v
 Persistent JSONL result log
@@ -95,10 +95,28 @@ The application uses a persistent Playwright browser profile in `hh_session`.
 2. Log in to the HH account in the opened browser.
 3. Complete CAPTCHA or other interactive checks manually.
 4. Enter `Подтвердить` in the console.
-5. The program collects and analyzes vacancies.
-6. Only accepted vacancies proceed to the application form.
+5. Choose one application mode:
+   - automatic application submission;
+   - confirmation-first submission, also called the safety mode.
+6. The program collects and analyzes vacancies.
+7. Only accepted vacancies proceed to the application form.
+
+In automatic mode, a validated accepted application is submitted without another console prompt.
+
+In confirmation-first mode, the generated cover letter is shown before the final application action. Press ENTER to submit it, type `пропустить` to skip the vacancy, or type an instruction for the model to regenerate the letter. That instruction is kept only for the current process session and is not written into the candidate profile.
 
 The program does not upload a local PDF resume anymore. HH uses the resume selected in the user's account profile. This avoids brittle file-upload fields and prevents an application from depending on a changing form control.
+
+## V2 Safety Mode
+
+The original version started sending accepted applications immediately after login and analysis. It did not provide a per-application confirmation option.
+
+V2 preserves the original automatic workflow but adds a choice between:
+
+- automatic submission for a hands-off run;
+- confirmation-first submission as a safety layer before each final click.
+
+The confirmation-first mode does not change deterministic scoring or silently approve a rejected vacancy. It only controls the final application action after the vacancy has passed analysis, safety checks and cover-letter validation.
 
 ## Duplicate Protection And State
 
@@ -176,6 +194,8 @@ The program prints the selected model, resume paths, search progress, analysis r
 - supports Russian and English vacancy communication;
 - generates tailored cover letters from the actual vacancy;
 - keeps login, CAPTCHA and the application session under user control;
+- allows automatic submission or confirmation-first submission per run;
+- allows session-only cover-letter instructions before a manual approval;
 - does not upload a resume file through a fragile form field;
 - supports portfolio-quality demonstration of Python, LLM integration and browser automation.
 
@@ -223,6 +243,10 @@ Local PDF upload was disabled. The resume is selected in the HH profile, so the 
 
 The browser opens before collection and waits for the explicit console command `Подтвердить`, giving the user time to authenticate and complete interactive checks.
 
+### Automatic submission and safety mode
+
+The original V1 flow submitted every accepted vacancy automatically after the initial login gate. V2 adds a per-run choice: automatic submission or confirmation-first submission. In the latter mode, every generated letter can be approved, skipped or regenerated with a temporary user instruction before the final click.
+
 ## Privacy And Security
 
 Do not commit:
@@ -247,4 +271,4 @@ The main browser workflow requires a real HH session and a running LM Studio ser
 
 ## Project Status
 
-AI-Hunter is an active personal portfolio project. The current implementation is suitable for local experimentation and carefully supervised applications. It should not be treated as unattended mass outreach or a guaranteed production automation system.
+AI-Hunter V2 is an active personal portfolio project. It supports both automatic application submission and a confirmation-first safety mode. The current implementation is suitable for local experimentation and supervised applications. It should not be treated as unattended mass outreach or a guaranteed production automation system.
