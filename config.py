@@ -14,4 +14,5 @@ LM_MODELS_URL = "http://localhost:1234/v1/models"
 LM_MODEL = "qwen/qwen3-4b-2507"
 
 DEFAULT_APPLICATION_MODE = "auto"
+PROMPT_VERSION = "v2"
 HH_URL = "https://astana.hh.kz/"

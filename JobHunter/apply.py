@@ -2,11 +2,33 @@ import asyncio
 import json
 import re
 import requests
+import os
 
 from pathlib import Path
 from datetime import datetime
 
 from playwright.async_api import async_playwright
+
+from candidate import CANDIDATE, CANDIDATE_PROFILE
+from models import Decision, VacancyAnalysis
+from safety import evaluate as evaluate_safety
+from config import (
+    AREA_ASTANA,
+    DEFAULT_APPLICATION_MODE,
+    HH_HOST,
+    HH_URL,
+    HH_API_URL,
+    HH_USER_AGENT,
+    LM_MODEL,
+    LM_MODELS_URL,
+    LM_STUDIO_URL,
+    MAX_TOTAL_VACANCIES,
+    MAX_VACANCIES_PER_SEARCH,
+    MIN_SCORE_TO_APPLY,
+    MIN_SCORE_TO_REVIEW,
+    PROMPT_VERSION,
+    REMOTE_MIN_SCORE_TO_APPLY,
+)
 
 
 # ============================================================
@@ -15,7 +37,13 @@ from playwright.async_api import async_playwright
 
 SEARCH_URLS = [
 
-    # Fullstack / Web
+    # Backend / Python discovery
+    "https://astana.hh.kz/search/vacancy?text=Python+Developer&area=160",
+    "https://astana.hh.kz/search/vacancy?text=Backend+Python&area=160",
+    "https://astana.hh.kz/search/vacancy?text=Python+Automation&area=160",
+    "https://astana.hh.kz/search/vacancy?text=Backend+Developer&area=160",
+
+    # Fullstack / Web discovery
     "https://astana.hh.kz/search/vacancy?text=Full-stack+Developer&area=160",
     "https://astana.hh.kz/search/vacancy?text=Fullstack+Developer&area=160",
     "https://astana.hh.kz/search/vacancy?text=Full+Stack+разработчик&area=160",
@@ -23,60 +51,49 @@ SEARCH_URLS = [
     "https://astana.hh.kz/search/vacancy?text=Веб-разработчик&area=160",
     "https://astana.hh.kz/search/vacancy?text=Web+Developer&area=160",
 
-    # JavaScript / TypeScript Fullstack вариации
+    # JavaScript / TypeScript discovery
     "https://astana.hh.kz/search/vacancy?text=React+Node.js&area=160",
+    "https://astana.hh.kz/search/vacancy?text=React+TypeScript&area=160",
     "https://astana.hh.kz/search/vacancy?text=JavaScript+Fullstack&area=160",
     "https://astana.hh.kz/search/vacancy?text=TypeScript+Developer&area=160",
 
-    # No-Code / Low-Code / Make / n8n (часто ищут автоматизаторов без чистого кода)
+    # AI / LLM / integration discovery
+    "https://astana.hh.kz/search/vacancy?text=AI+Integration+Developer&area=160",
+    "https://astana.hh.kz/search/vacancy?text=AI+Automation&area=160",
+    "https://astana.hh.kz/search/vacancy?text=AI+Engineer&area=160",
+    "https://astana.hh.kz/search/vacancy?text=AI+Assistant&area=160",
+    "https://astana.hh.kz/search/vacancy?text=LLM&area=160",
+    "https://astana.hh.kz/search/vacancy?text=API+Integration&area=160",
+    "https://astana.hh.kz/search/vacancy?text=Integration+Developer&area=160",
+
+    # Automation / RPA / no-code discovery
+    "https://astana.hh.kz/search/vacancy?text=Automation+Developer&area=160",
+    "https://astana.hh.kz/search/vacancy?text=RPA&area=160",
     "https://astana.hh.kz/search/vacancy?text=n8n&area=160",
     "https://astana.hh.kz/search/vacancy?text=Make.com&area=160",
     "https://astana.hh.kz/search/vacancy?text=No-Code&area=160",
     "https://astana.hh.kz/search/vacancy?text=Zapier&area=160",
 
-    # CRM & Business Systems Integrations
+    # CRM / business systems discovery
     "https://astana.hh.kz/search/vacancy?text=CRM+Developer&area=160",
     "https://astana.hh.kz/search/vacancy?text=amoCRM&area=160",
     "https://astana.hh.kz/search/vacancy?text=Bitrix24&area=160",
     "https://astana.hh.kz/search/vacancy?text=Integration+Specialist&area=160",
 
-    # Web & Frontend расширения
-    "https://astana.hh.kz/search/vacancy?text=Frontend&area=160",
-    "https://astana.hh.kz/search/vacancy?text=Web+Developer&area=160",
-    "https://astana.hh.kz/search/vacancy?text=TypeScript&area=160",
-
-    # Общие Python/Junior вариации
+    # Junior / entry-level discovery
     "https://astana.hh.kz/search/vacancy?text=Junior+Developer&area=160",
     "https://astana.hh.kz/search/vacancy?text=Стажер+Python&area=160",
     "https://astana.hh.kz/search/vacancy?text=Python+разработчик&area=160",
 ]
 
+# Keep the discovery area configurable even though the query list is readable.
+SEARCH_URLS = [url.replace("area=160", f"area={AREA_ASTANA}") for url in SEARCH_URLS]
+
 
 # Максимум вакансий за запуск
-MAX_TOTAL_VACANCIES = 2500
-
-# Максимум вакансий из одного поискового запроса
-MAX_VACANCIES_PER_SEARCH = 50
-
-# Обычная вакансия
-MIN_SCORE_TO_APPLY = 65
-
-# Remote-вакансия
-REMOTE_MIN_SCORE_TO_APPLY = 60
-
-# Ручная проверка
-MIN_SCORE_TO_REVIEW = 55
-
-
 # ============================================================
 # LM STUDIO
 # ============================================================
-
-LM_STUDIO_URL = "http://localhost:1234/v1/chat/completions"
-LM_MODELS_URL = "http://localhost:1234/v1/models"
-
-LM_MODEL = "qwen/qwen3-vl-8b"
-
 
 # ============================================================
 # FILES
@@ -85,216 +102,27 @@ LM_MODEL = "qwen/qwen3-vl-8b"
 BASE_DIR = Path(__file__).resolve().parent
 
 SESSION_DIR = BASE_DIR / "hh_session"
+# Совместимость со старой структурой проекта, где сессия лежала в JobHunter/hh_session.
+LEGACY_SESSION_DIR = BASE_DIR / "JobHunter" / "hh_session"
+if not SESSION_DIR.exists() and LEGACY_SESSION_DIR.exists():
+    SESSION_DIR = LEGACY_SESSION_DIR
 RESULTS_FILE = BASE_DIR / "results.jsonl"
-
-HH_URL = "https://astana.hh.kz/"
-
 
 # ============================================================
 # RESUME PDF ATTACHMENT
 # ============================================================
 
-# Включить/выключить прикрепление PDF резюме к отклику
-ATTACH_RESUME_PDF = True
+# Резюме берётся из профиля HH. Загрузка локального PDF отключена.
+ATTACH_RESUME_PDF = False
 
 # Резюме должны лежать в той же папке, что и этот скрипт.
 # Если у тебя другие имена файлов - поменяй пути тут.
-RESUME_PATH_RUS = BASE_DIR / "resume_RUS.pdf"
-RESUME_PATH_ENG = BASE_DIR / "resume_ENG.pdf"
+RESUME_PATH_RUS = BASE_DIR / "output" / "pdf" / "Resume_Yernar_Ibadulla_Russian_Final.pdf"
+RESUME_PATH_ENG = BASE_DIR / "output" / "pdf" / "Resume_Yernar_Ibadulla_AI_Integration_Backend_Final.pdf"
 
-
-# ============================================================
-# CANDIDATE
-# ============================================================
-
-CANDIDATE_PROFILE = """
-NAME:
-Ернар
-
-LOCATION:
-Astana, Kazakhstan
-
-LEVEL:
-Junior+.
-
-TARGET ROLES:
-- AI Integration Developer
-- AI Automation Developer
-- AI Developer
-- Python Developer
-- Junior Python Developer
-- Backend Developer
-- Automation Developer
-- Backend / Automation Developer
-- LLM Integration Developer
-- Full-Stack Developer
-
-IMPORTANT:
-"AI Engineer" is NOT a preferred target role by itself.
-
-However, an "AI Engineer" vacancy may still be suitable if
-the actual work is mainly:
-- LLM integrations
-- AI assistants
-- Function Calling
-- API integrations
-- workflow automation
-- business automation
-
-COMMERCIAL EXPERIENCE:
-
-S-Dental — AI Automation Developer
-
-Confirmed commercial experience:
-- AI assistant development
-- AI-powered customer communication
-- Knowledge Base Design
-- Function Calling
-- Google Calendar integration
-- amoCRM integration
-- Kaspi API integration
-- business workflow automation
-- NextBot
-- Make
-- n8n
-
-
-PROJECT EXPERIENCE:
-
-Coffee Shop Analytics Platform:
-- Python
-- JavaScript
-- React
-- HTML5
-- CSS3
-- REST APIs
-- Google Sheets API / GViz
-- QR tracking
-- conversion analytics
-- dashboards
-- employee-level tracking
-- external platform click tracking
-- GitHub Pages
-
-
-CONFIRMED TECHNICAL SKILLS:
-
-PROGRAMMING:
-- Python
-- JavaScript
-- Node.js
-- SQL
-- Java
-- Go
-
-WEB:
-- React
-- HTML5
-- CSS3
-- REST APIs
-
-AI / LLM:
-- LLMs
-- OpenAI API
-- Prompt Engineering
-- Function Calling
-- Knowledge Base Design
-- AI Assistants
-- LLM Integrations
-
-AUTOMATION:
-- Workflow Automation
-- AI Automation
-- n8n
-- Make
-- NextBot
-
-INTEGRATIONS:
-- REST API integrations
-- CRM integrations
-- amoCRM API
-- Google Calendar API
-- Google Sheets API
-- Kaspi API
-- Robokassa API
-- Webhooks
-
-DATA / ANALYTICS:
-- SQL
-- Power BI
-- Excel
-- Google Sheets
-- Data Visualization
-- QR Tracking
-- Conversion Analytics
-
-TOOLS:
-- Git
-- GitHub
-- Linux
-- GitHub Pages
-
-EDUCATION:
-Turan-Astana University
-Faculty of Information Technologies and Cybersecurity
-Government Educational Grant
-
-LANGUAGES:
-- Russian — Fluent
-- Kazakh — Fluent
-- English — B2/B2+
-
-
-NOT CONFIRMED:
-
-The following technologies are NOT confirmed:
-
-- FastAPI
-- Django
-- Flask
-- Docker
-- Kubernetes
-- PostgreSQL
-- MySQL
-- Redis
-- MongoDB
-- AWS
-- Azure
-- GCP
-- Terraform
-- Kafka
-- LangChain
-- LangGraph
-- RAG
-- vector databases
-- PyTorch
-- TensorFlow
-- CI/CD
-- pytest
-- unittest
-- Postman
-- Requests
-- HTTPX
-
-NEVER present these as existing experience.
-
-They may be considered transferable skills when appropriate.
-
-
-ABSOLUTE RULES:
-
-Do NOT invent:
-- years of experience
-- companies
-- positions
-- technologies
-- certifications
-- responsibilities
-- commercial experience
-
-Own projects are practical/project experience,
-NOT commercial experience.
-"""
+# При необходимости новые PDF можно подключить без правки кода.
+RESUME_PATH_RUS = Path(os.getenv("JOBHUNTER_RESUME_RUS", str(RESUME_PATH_RUS)))
+RESUME_PATH_ENG = Path(os.getenv("JOBHUNTER_RESUME_ENG", str(RESUME_PATH_ENG)))
 
 
 # ============================================================
@@ -302,6 +130,8 @@ NOT commercial experience.
 # ============================================================
 
 ACTIVE_MODEL = None
+APPLICATION_MODE = DEFAULT_APPLICATION_MODE
+SESSION_LLM_INSTRUCTION = ""
 
 
 # ============================================================
@@ -380,6 +210,28 @@ def detect_text_language(text):
     return "rus"
 
 
+def validate_cover_letter_language(description, cover_letter):
+    """Запрещает смешанные письма и письмо не на языке описания вакансии."""
+    if not cover_letter:
+        return False, "Пустое сопроводительное письмо."
+
+    cyrillic = len(re.findall(r"[а-яА-ЯёЁ]", cover_letter))
+    latin = len(re.findall(r"[a-zA-Z]", cover_letter))
+
+    if cyrillic >= 20 and latin >= 20:
+        ratio = cyrillic / max(latin, 1)
+        if 0.4 <= ratio <= 2.5:
+            return False, "Сопроводительное письмо содержит смешанные языки."
+
+    expected = detect_text_language(description)
+    actual = detect_text_language(cover_letter)
+
+    if expected != actual:
+        return False, "Язык сопроводительного письма не совпадает с языком вакансии."
+
+    return True, ""
+
+
 def pick_resume_path(vacancy_data, analysis):
     """
     Выбирает PDF резюме под язык вакансии.
@@ -445,8 +297,10 @@ def load_processed_ids():
                 status = result.get("status")
 
                 if vacancy_id and status in {
+                    # Финальные статусы: повторно не анализируем.
                     "applied",
                     "already_applied",
+                    "rejected_by_ai",
                 }:
                     processed.add(
                         str(vacancy_id)
@@ -466,6 +320,12 @@ def load_processed_ids():
 # ============================================================
 
 def save_result(vacancy, result):
+
+    result = dict(result)
+    result.setdefault("model", ACTIVE_MODEL or LM_MODEL)
+    result.setdefault("prompt_version", PROMPT_VERSION)
+    result.setdefault("application_mode", APPLICATION_MODE)
+    result.setdefault("decision_reason", result.get("reason", ""))
 
     record = {
         "timestamp": now_iso(),
@@ -583,6 +443,64 @@ def check_lm_studio():
         print(e)
 
         return False
+
+
+def wait_for_hh_login(page):
+    """Останавливает pipeline до ручного входа в HH."""
+    print()
+    print("=" * 70)
+    print("ТРЕБУЕТСЯ ВХОД В HH")
+    print("=" * 70)
+    print("1. В открывшемся браузере войдите в аккаунт HH.")
+    print("2. При необходимости пройдите CAPTCHA и дождитесь загрузки профиля.")
+    print('3. Вернитесь в консоль и введите точно: Подтвердить')
+
+    while True:
+        confirmation = input("\nВаш ввод: ").strip().casefold()
+        if confirmation == "подтвердить":
+            break
+        print('Ожидается команда "Подтвердить". Браузер оставлен открытым.')
+
+    try:
+        page.reload(wait_until="domcontentloaded", timeout=30000)
+    except Exception as e:
+        raise RuntimeError(f"Не удалось проверить сессию HH после входа: {e}") from e
+
+    print("Сессия HH подтверждена. Переходим к сбору и анализу вакансий.")
+
+
+def choose_application_mode():
+    print()
+    print("=" * 70)
+    print("РЕЖИМ ОТПРАВКИ ОТКЛИКОВ")
+    print("=" * 70)
+    print("1. Автоматическая отправка откликов")
+    print("2. Отправка откликов только при подтверждении")
+
+    while True:
+        choice = input("\nВыберите режим (1/2): ").strip()
+        if choice == "1":
+            print("Выбран автоматический режим.")
+            return "auto"
+        if choice == "2":
+            print("Выбран режим подтверждения каждого отклика.")
+            return "manual"
+        print("Введите 1 или 2.")
+
+
+async def review_cover_letter(cover_letter):
+    print()
+    print("РЕЖИМ ПОДТВЕРЖДЕНИЯ")
+    print("Нажмите ENTER, чтобы отправить этот отклик.")
+    print("Введите инструкцию для модели, чтобы переписать письмо для этой сессии.")
+    print("Введите 'пропустить', чтобы не отправлять эту вакансию.")
+    answer = input("\nВаш выбор: ").strip()
+
+    if not answer:
+        return "send", ""
+    if answer.casefold() in {"пропустить", "skip", "отмена", "cancel"}:
+        return "skip", ""
+    return "regenerate", answer
 
 
 # ============================================================
@@ -1081,7 +999,7 @@ DECISION
 should_apply = true,
 если одновременно:
 
-score >= 75
+score >= 65
 direction_match = true
 hard_blocker = false
 нет обязательного Senior/Lead/Principal production experience,
@@ -1164,6 +1082,12 @@ COVER LETTER — LANGUAGE
 естественного текста описания.
 
 Технические термины не учитывай как доказательство языка.
+
+КРИТИЧЕСКОЕ ПРАВИЛО: cover_letter должен быть написан
+только на одном языке. Не смешивай русский и английский
+в одном письме. Английские названия технологий и компаний
+можно оставлять как собственные названия, но все предложения
+и связный текст должны быть на выбранном языке вакансии.
 
 Например:
 
@@ -1270,11 +1194,17 @@ OUTPUT
 
     "commercial_experience_required": false,
     "commercial_experience_mandatory": false,
+    "required_commercial_years": null,
+    "salary_known": false,
+    "salary_min": null,
+    "salary_max": null,
 
     "matched_skills": [],
     "transferable_skills": [],
     "missing_skills": [],
     "critical_missing_skills": [],
+    "language": "ru",
+    "is_remote": false,
 
     "reason": "",
 
@@ -1312,7 +1242,8 @@ OUTPUT
 
 def build_vacancy_prompt(
     vacancy_data,
-    is_remote
+    is_remote,
+    session_instruction=""
 ):
 
     remote_status = (
@@ -1380,10 +1311,10 @@ DECISION
 ============================================================
 
 Normal vacancy:
-apply threshold = 75.
+apply threshold = %s.
 
 Remote vacancy:
-apply threshold = 60.
+apply threshold = %s.
 
 Do not reject solely because critical_missing_skills is non-empty.
 
@@ -1405,6 +1336,13 @@ English vacancy -> English letter.
 
 Do not use English merely because the title is English.
 
+SESSION-ONLY USER INSTRUCTION
+=============================
+%s
+
+Apply this instruction only to the current cover letter generation session.
+Do not invent experience, companies, technologies or achievements.
+
 ============================================================
 OUTPUT
 ============================================================
@@ -1420,10 +1358,16 @@ Return ONLY valid JSON.
     "hard_blocker_reason": "",
     "commercial_experience_required": false,
     "commercial_experience_mandatory": false,
+    "required_commercial_years": null,
+    "salary_known": false,
+    "salary_min": null,
+    "salary_max": null,
     "matched_skills": [],
     "transferable_skills": [],
     "missing_skills": [],
     "critical_missing_skills": [],
+    "language": "ru",
+    "is_remote": false,
     "reason": "",
     "cover_letter": ""
 }
@@ -1432,6 +1376,9 @@ Return ONLY valid JSON.
         vacancy_data.get("title", ""),
         vacancy_data.get("description", "")[:20000],
         remote_status,
+        MIN_SCORE_TO_APPLY,
+        REMOTE_MIN_SCORE_TO_APPLY,
+        session_instruction or "No additional instruction.",
     )
 
 
@@ -1466,7 +1413,7 @@ def ask_llm(prompt):
             "max_tokens": 1500,
         },
 
-        timeout=180,
+        timeout=300,
     )
 
     response.raise_for_status()
@@ -1519,7 +1466,7 @@ def ask_llm(prompt):
 # PARSE JSON
 # ============================================================
 
-def parse_llm_response(text):
+def parse_llm_response(text) -> VacancyAnalysis | None:
 
     if not text:
         return None
@@ -1575,13 +1522,17 @@ def parse_llm_response(text):
 
         return None
 
-    if not isinstance(
-        result,
-        dict
-    ):
+    if not isinstance(result, dict):
         return None
 
-    return result
+    try:
+        return VacancyAnalysis.model_validate(result)
+    except Exception as e:
+        print()
+        print("ОШИБКА СХЕМЫ LLM:")
+        print(e)
+        print("Отклик отклонён без отправки заявки.")
+        return None
 
 
 # ============================================================
@@ -1620,14 +1571,36 @@ def normalize_list(value):
     ]
 
 
+def salary_below_candidate_minimum(vacancy_data):
+    """Return a blocking reason only when a published salary is explicit."""
+    minimum = CANDIDATE.get("minimum_salary")
+    if not minimum:
+        return ""
+    text = " ".join(
+        str(vacancy_data.get(key, ""))
+        for key in ("title", "description", "salary", "compensation")
+    ).lower()
+    amounts = [int(value.replace(" ", "")) for value in re.findall(r"(?<!\d)(\d{3}(?:[ .]\d{3})?)(?:\s*(?:₸|тг|тенге))", text)]
+    if amounts and max(amounts) < minimum:
+        return f"Указанная зарплата ниже минимума кандидата ({minimum:,} KZT)."
+    return ""
+
+
 # ============================================================
 # SAFETY FILTER
 # ============================================================
 
 def apply_safety_filter(
     analysis,
-    is_remote=False
+    is_remote=False,
+    vacancy_data=None
 ):
+
+    return evaluate_safety(
+        analysis,
+        vacancy=vacancy_data,
+        is_remote=is_remote,
+    )
 
     if not isinstance(
         analysis,
@@ -1681,12 +1654,13 @@ def apply_safety_filter(
         )
     )
 
-    hard_blocker = to_bool(
-        analysis.get(
-            "hard_blocker",
-            False
-        )
-    )
+    hard_blocker = analysis.get("hard_blocker", False)
+    if not isinstance(hard_blocker, bool):
+        return {
+            "score": 0, "should_apply": False, "decision": "reject",
+            "reason": "Некорректный hard_blocker в ответе AI.",
+            "cover_letter": "",
+        }
 
     commercial_mandatory = to_bool(
         analysis.get(
@@ -1759,8 +1733,11 @@ def apply_safety_filter(
         )
     ).strip().lower()
 
+    required_commercial_years = analysis.get("required_commercial_years")
+    candidate_commercial_years = CANDIDATE.get("commercial_experience_years", 0)
+
     # --------------------------------------------------------
-    # THRESHOLD
+    # THRESHOLD AND CANDIDATE RULES
     # --------------------------------------------------------
 
     minimum_score = (
@@ -1779,6 +1756,8 @@ def apply_safety_filter(
     # Блокирует только:
     # hard_blocker = true
     # --------------------------------------------------------
+
+    salary_reason = salary_below_candidate_minimum(vacancy_data or {})
 
     if hard_blocker:
 
@@ -1804,15 +1783,7 @@ def apply_safety_filter(
                 "не соответствует профилю кандидата."
             )
 
-    elif (
-        commercial_mandatory
-        and (
-            "senior" in job_level
-            or "lead" in job_level
-            or "principal" in job_level
-            or "middle/senior" in job_level
-        )
-    ):
+    elif commercial_mandatory and required_commercial_years is not None and required_commercial_years > candidate_commercial_years:
 
         decision = "reject"
         should_apply = False
@@ -1820,10 +1791,14 @@ def apply_safety_filter(
         if not reason:
 
             reason = (
-                "Вакансия требует обязательный "
-                "коммерческий production experience "
-                "для уровня выше Junior."
+                f"Вакансия требует {required_commercial_years:g} лет коммерческого опыта, "
+                f"у кандидата подтверждено {candidate_commercial_years:g}."
             )
+
+    elif salary_reason:
+        decision = "reject"
+        should_apply = False
+        reason = reason or salary_reason
 
     elif score >= minimum_score:
 
@@ -1896,6 +1871,8 @@ def apply_safety_filter(
         "commercial_experience_mandatory":
             commercial_mandatory,
 
+        "required_commercial_years": required_commercial_years,
+
         "matched_skills":
             matched_skills,
 
@@ -1921,7 +1898,8 @@ def apply_safety_filter(
 # ============================================================
 
 async def analyze_vacancy(
-    vacancy_data
+    vacancy_data,
+    session_instruction=""
 ):
 
     is_remote = detect_remote(
@@ -1938,7 +1916,8 @@ async def analyze_vacancy(
 
     prompt = build_vacancy_prompt(
         vacancy_data,
-        is_remote
+        is_remote,
+        session_instruction
     )
 
     try:
@@ -1973,10 +1952,32 @@ async def analyze_vacancy(
             ),
         }
 
-    return apply_safety_filter(
+    decision: Decision = apply_safety_filter(
         analysis,
-        is_remote=is_remote
+        is_remote=is_remote,
+        vacancy_data=vacancy_data,
     )
+
+    result = decision.model_dump()
+    result.update(analysis.model_dump())
+    result["decision"] = decision.action
+
+    if decision.should_apply:
+        valid_language, language_error = validate_cover_letter_language(
+            vacancy_data.get("description", ""),
+            result.get("cover_letter", "")
+        )
+
+        if not valid_language:
+            result["should_apply"] = False
+            result["decision"] = "reject"
+            result["cover_letter"] = ""
+            result["reason"] = (
+                language_error
+                + " Отклик заблокирован до повторной генерации корректного письма."
+            )
+
+    return result
 
 
 # ============================================================
@@ -2165,6 +2166,20 @@ async def find_response_button(
 # ADD COVER LETTER
 # ============================================================
 
+async def fill_and_verify(locator, text):
+    """Заполняет поле и проверяет, что весь текст записан."""
+    try:
+        await locator.fill(text)
+        expected = text.strip()
+        try:
+            actual = (await locator.input_value()).strip()
+        except Exception:
+            actual = (await locator.text_content() or "").strip()
+        return actual == expected
+    except Exception:
+        return False
+
+
 async def add_cover_letter(
     page,
     cover_letter
@@ -2189,11 +2204,8 @@ async def add_cover_letter(
 
             if await candidate.is_visible():
 
-                await candidate.fill(
-                    cover_letter
-                )
-
-                return True
+                if await fill_and_verify(candidate, cover_letter):
+                    return True
 
         except Exception:
             continue
@@ -2205,7 +2217,7 @@ async def add_cover_letter(
         button = page.get_by_role(
             "button",
             name=re.compile(
-                r"добавить сопроводительное",
+                r"добавить сопроводительное|сопроводительное письмо|добавить письмо",
                 re.IGNORECASE
             )
         )
@@ -2254,11 +2266,8 @@ async def add_cover_letter(
 
             if await candidate.is_visible():
 
-                await candidate.fill(
-                    cover_letter
-                )
-
-                return True
+                if await fill_and_verify(candidate, cover_letter):
+                    return True
 
         except Exception:
             continue
@@ -2279,12 +2288,23 @@ async def add_cover_letter(
 
             if await candidate.is_visible():
 
-                await candidate.fill(
-                    cover_letter
-                )
+                if await fill_and_verify(candidate, cover_letter):
+                    return True
 
-                return True
+        except Exception:
+            continue
 
+    # HH может отрисовать поле как ARIA textbox без textarea/contenteditable.
+    textboxes = page.get_by_role("textbox")
+    count = await textboxes.count()
+
+    for i in range(count):
+        candidate = textboxes.nth(i)
+
+        try:
+            if await candidate.is_visible():
+                if await fill_and_verify(candidate, cover_letter):
+                    return True
         except Exception:
             continue
 
@@ -2750,8 +2770,10 @@ async def collect_vacancies(
 async def process_vacancy(
     page,
     vacancy,
-    processed_ids
+    processed_ids,
+    application_mode
 ):
+    global SESSION_LLM_INSTRUCTION
 
     print()
     print()
@@ -2841,7 +2863,8 @@ async def process_vacancy(
     # --------------------------------------------------------
 
     analysis = await analyze_vacancy(
-        vacancy_data
+        vacancy_data,
+        SESSION_LLM_INSTRUCTION
     )
 
     if "error" in analysis:
@@ -2981,30 +3004,61 @@ async def process_vacancy(
     # APPLY
     # --------------------------------------------------------
 
-    cover_letter = (
-        analysis.get(
-            "cover_letter",
-            ""
-        )
-        .strip()
-    )
-
-    if not cover_letter:
-
-        print(
-            "→ ОТКАЗ: нет сопроводительного."
+    while True:
+        cover_letter = (
+            analysis.get(
+                "cover_letter",
+                ""
+            )
+            .strip()
         )
 
-        return {
-            "status": "no_cover_letter",
-            **analysis,
-        }
+        if not cover_letter:
+            print("→ ОТКАЗ: нет сопроводительного.")
+            return {
+                "status": "no_cover_letter",
+                **analysis,
+            }
 
-    print()
-    print("СОПРОВОДИТЕЛЬНОЕ:")
-    print("-" * 60)
-    print(cover_letter)
-    print("-" * 60)
+        print()
+        print("СОПРОВОДИТЕЛЬНОЕ:")
+        print("-" * 60)
+        print(cover_letter)
+        print("-" * 60)
+
+        if application_mode != "manual":
+            break
+
+        review_action, instruction = await review_cover_letter(cover_letter)
+
+        if review_action == "send":
+            break
+
+        if review_action == "skip":
+            return {
+                "status": "manual_skipped",
+                **analysis,
+            }
+
+        SESSION_LLM_INSTRUCTION = instruction
+        print("Перегенерирую письмо с инструкцией только для этой сессии...")
+        analysis = await analyze_vacancy(
+            vacancy_data,
+            SESSION_LLM_INSTRUCTION
+        )
+
+        if "error" in analysis:
+            return {
+                "status": analysis["error"],
+                "reason": analysis.get("reason", ""),
+            }
+
+        if analysis.get("decision") != "apply":
+            print("Модель не разрешила отправку после обновления письма.")
+            return {
+                "status": "rejected_after_manual_edit",
+                **analysis,
+            }
 
     # --------------------------------------------------------
     # RESPONSE BUTTON
@@ -3047,27 +3101,7 @@ async def process_vacancy(
             **analysis,
         }
 
-    # --------------------------------------------------------
-    # RESUME PDF
-    # --------------------------------------------------------
-
-    if ATTACH_RESUME_PDF:
-
-        resume_path = pick_resume_path(
-            vacancy_data,
-            analysis
-        )
-
-        print()
-        print(
-            "Пробую прикрепить резюме:",
-            resume_path.name
-        )
-
-        await attach_resume_pdf(
-            page,
-            resume_path
-        )
+    # Резюме не загружаем: HH использует резюме, выбранное в профиле аккаунта.
 
     # --------------------------------------------------------
     # COVER LETTER
@@ -3301,6 +3335,10 @@ async def main():
                 page.url
             )
 
+            # До ручного подтверждения вакансии не собираются и не анализируются.
+            wait_for_hh_login(page)
+            application_mode = choose_application_mode()
+
             # ------------------------------------------------
             # COLLECT
             # ------------------------------------------------
@@ -3407,7 +3445,8 @@ async def main():
                         await process_vacancy(
                             page,
                             vacancy,
-                            processed_ids
+                                processed_ids,
+                                application_mode
                         )
                     )
 
@@ -3439,6 +3478,7 @@ async def main():
                 if result.get("status") in {
                     "applied",
                     "already_applied",
+                    "rejected_by_ai",
                 }:
 
                     processed_ids.add(
@@ -3560,3 +3600,4 @@ if __name__ == "__main__":
     asyncio.run(
         main()
     )
+

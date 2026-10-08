@@ -10,7 +10,7 @@ from datetime import datetime
 from playwright.async_api import async_playwright
 
 from candidate import CANDIDATE, CANDIDATE_PROFILE
-from models import VacancyAnalysis
+from models import Decision, VacancyAnalysis
 from safety import evaluate as evaluate_safety
 from config import (
     AREA_ASTANA,
@@ -26,6 +26,7 @@ from config import (
     MAX_VACANCIES_PER_SEARCH,
     MIN_SCORE_TO_APPLY,
     MIN_SCORE_TO_REVIEW,
+    PROMPT_VERSION,
     REMOTE_MIN_SCORE_TO_APPLY,
 )
 
@@ -319,6 +320,12 @@ def load_processed_ids():
 # ============================================================
 
 def save_result(vacancy, result):
+
+    result = dict(result)
+    result.setdefault("model", ACTIVE_MODEL or LM_MODEL)
+    result.setdefault("prompt_version", PROMPT_VERSION)
+    result.setdefault("application_mode", APPLICATION_MODE)
+    result.setdefault("decision_reason", result.get("reason", ""))
 
     record = {
         "timestamp": now_iso(),
@@ -1459,7 +1466,7 @@ def ask_llm(prompt):
 # PARSE JSON
 # ============================================================
 
-def parse_llm_response(text):
+def parse_llm_response(text) -> VacancyAnalysis | None:
 
     if not text:
         return None
@@ -1519,7 +1526,7 @@ def parse_llm_response(text):
         return None
 
     try:
-        return VacancyAnalysis.model_validate(result).model_dump()
+        return VacancyAnalysis.model_validate(result)
     except Exception as e:
         print()
         print("ОШИБКА СХЕМЫ LLM:")
@@ -1945,13 +1952,17 @@ async def analyze_vacancy(
             ),
         }
 
-    result = apply_safety_filter(
+    decision: Decision = apply_safety_filter(
         analysis,
         is_remote=is_remote,
         vacancy_data=vacancy_data,
     )
 
-    if result.get("should_apply"):
+    result = decision.model_dump()
+    result.update(analysis.model_dump())
+    result["decision"] = decision.action
+
+    if decision.should_apply:
         valid_language, language_error = validate_cover_letter_language(
             vacancy_data.get("description", ""),
             result.get("cover_letter", "")
