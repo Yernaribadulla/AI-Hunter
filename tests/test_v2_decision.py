@@ -62,6 +62,16 @@ class DecisionEngineTests(unittest.TestCase):
         )
         self.assertFalse(result["should_apply"])
 
+    def test_unknown_salary_is_not_rejected_by_salary_rule(self):
+        result = apply_safety_filter(analysis(), vacancy_data={"description": "Компенсация обсуждается"})
+        self.assertTrue(result["should_apply"])
+
+    def test_preferred_commercial_experience_is_not_hard_reject(self):
+        result = apply_safety_filter(
+            analysis(commercial_experience_mandatory=False, required_commercial_years=5)
+        )
+        self.assertTrue(result["should_apply"])
+
 
 if __name__ == "__main__":
     unittest.main()

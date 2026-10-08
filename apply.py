@@ -11,6 +11,7 @@ from playwright.async_api import async_playwright
 
 from candidate import CANDIDATE, CANDIDATE_PROFILE
 from models import VacancyAnalysis
+from safety import evaluate as evaluate_safety
 from config import (
     AREA_ASTANA,
     DEFAULT_APPLICATION_MODE,
@@ -1187,6 +1188,9 @@ OUTPUT
     "commercial_experience_required": false,
     "commercial_experience_mandatory": false,
     "required_commercial_years": null,
+    "salary_known": false,
+    "salary_min": null,
+    "salary_max": null,
 
     "matched_skills": [],
     "transferable_skills": [],
@@ -1348,6 +1352,9 @@ Return ONLY valid JSON.
     "commercial_experience_required": false,
     "commercial_experience_mandatory": false,
     "required_commercial_years": null,
+    "salary_known": false,
+    "salary_min": null,
+    "salary_max": null,
     "matched_skills": [],
     "transferable_skills": [],
     "missing_skills": [],
@@ -1581,6 +1588,12 @@ def apply_safety_filter(
     is_remote=False,
     vacancy_data=None
 ):
+
+    return evaluate_safety(
+        analysis,
+        vacancy=vacancy_data,
+        is_remote=is_remote,
+    )
 
     if not isinstance(
         analysis,

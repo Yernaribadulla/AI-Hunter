@@ -2,6 +2,9 @@ venv/
 __pycache__/
 hh_session/
 filtered.json
+vacancies.json
+suitable_vacancies.json
+profile.json
 results.jsonl
 output/
 build_resume.py

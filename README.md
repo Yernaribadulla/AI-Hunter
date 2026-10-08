@@ -33,7 +33,7 @@ Local LLM analysis through LM Studio
 Pydantic schema validation
        |
        v
-Deterministic safety and decision engine
+Deterministic safety and decision engine (`safety.py`)
        |
        +--> reject / manual review
        |
@@ -94,7 +94,7 @@ The rule-based safety layer then:
 
 If any validation fails, the final application button is not clicked. Python owns the final APPLY, REVIEW or REJECT decision; the LLM never has authority to submit.
 
-The main runtime modules are deliberately small in responsibility: `candidate.py` (profile), `config.py` (settings), `models.py` (validated LLM schema), `apply.py` (existing orchestration and browser workflow), and `tests/` (decision checks). The legacy `filter.py` is not a second production decision engine.
+The main runtime modules are deliberately small in responsibility: `candidate.py` (profile), `config.py` (settings), `models.py` (validated LLM schema), `safety.py` (deterministic policy), `apply.py` (existing orchestration and browser workflow), and `tests/` (decision checks). The legacy `filter.py` is not a second production decision engine.
 
 ## Login And Application Flow
 
@@ -129,7 +129,7 @@ The confirmation-first mode does not change deterministic scoring or silently ap
 
 ## Duplicate Protection And State
 
-Results are appended to `results.jsonl`. Final statuses are used to avoid repeating work after a restart:
+Results are appended locally to `results.jsonl` (the file is ignored by Git because it may contain personal vacancy history). Final statuses are used to avoid repeating work after a restart:
 
 - `applied`;
 - `already_applied`;
@@ -142,6 +142,8 @@ Temporary or technical failures remain retryable:
 - `send_error`;
 - `unknown`;
 - other form and navigation errors.
+
+The same local-only policy applies to generated vacancy datasets (`vacancies.json`, `filtered.json`, `suitable_vacancies.json`) and the legacy `profile.json`. The production runtime profile is `candidate.py`.
 
 This distinction prevents rejected vacancies from being analyzed again while still allowing recovery from a timeout or a broken browser state.
 

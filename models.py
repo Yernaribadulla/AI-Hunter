@@ -17,6 +17,9 @@ class VacancyAnalysis(BaseModel):
     commercial_experience_required: StrictBool = False
     commercial_experience_mandatory: StrictBool = False
     required_commercial_years: Optional[float] = Field(default=None, ge=0)
+    salary_known: StrictBool = False
+    salary_min: Optional[int] = Field(default=None, ge=0)
+    salary_max: Optional[int] = Field(default=None, ge=0)
     matched_skills: list[str] = Field(default_factory=list)
     transferable_skills: list[str] = Field(default_factory=list)
     missing_skills: list[str] = Field(default_factory=list)
