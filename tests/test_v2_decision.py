@@ -1,7 +1,9 @@
 import unittest
+import os
+from unittest import mock
 from unittest.mock import patch
 
-from apply import apply_safety_filter, parse_llm_response
+from apply import apply_safety_filter, choose_application_mode, parse_llm_response
 from models import VacancyAnalysis
 
 
@@ -20,6 +22,11 @@ def analysis(**overrides):
 
 
 class DecisionEngineTests(unittest.TestCase):
+    def test_gui_mode_selection_does_not_read_stdin(self):
+        with mock.patch.dict(os.environ, {"JOBHUNTER_GUI_MODE": "manual"}):
+            with mock.patch("builtins.input", side_effect=AssertionError("GUI must not read stdin")):
+                self.assertEqual(choose_application_mode(), "manual")
+
     def test_direction_mismatch_rejects(self):
         self.assertEqual(apply_safety_filter(analysis(direction_match=False)).action, "reject")
 

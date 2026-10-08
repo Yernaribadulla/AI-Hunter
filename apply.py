@@ -452,6 +452,14 @@ def check_lm_studio():
 
 def wait_for_hh_login(page):
     """Останавливает pipeline до ручного входа в HH."""
+    if os.getenv("JOBHUNTER_GUI_CONFIRMED") == "1":
+        print("HH-сессия подтверждена через GUI.")
+        try:
+            page.reload(wait_until="domcontentloaded", timeout=30000)
+        except Exception as e:
+            raise RuntimeError(f"Не удалось проверить сессию HH после GUI-подтверждения: {e}") from e
+        return
+
     print()
     print("=" * 70)
     print("ТРЕБУЕТСЯ ВХОД В HH")

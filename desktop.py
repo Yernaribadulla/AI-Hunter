@@ -89,6 +89,7 @@ class RunPanel(QWidget):
         self.process = QProcess(self)
         env = self.process.processEnvironment()
         env.insert("JOBHUNTER_GUI_MODE", self.mode.currentData())
+        env.insert("JOBHUNTER_GUI_CONFIRMED", "1")
         self.process.setProcessEnvironment(env)
         self.process.setWorkingDirectory(str(ROOT))
         self.process.setProgram(sys.executable)
