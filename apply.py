@@ -9,6 +9,25 @@ from datetime import datetime
 
 from playwright.async_api import async_playwright
 
+from candidate import CANDIDATE, CANDIDATE_PROFILE
+from models import VacancyAnalysis
+from config import (
+    AREA_ASTANA,
+    DEFAULT_APPLICATION_MODE,
+    HH_HOST,
+    HH_URL,
+    HH_API_URL,
+    HH_USER_AGENT,
+    LM_MODEL,
+    LM_MODELS_URL,
+    LM_STUDIO_URL,
+    MAX_TOTAL_VACANCIES,
+    MAX_VACANCIES_PER_SEARCH,
+    MIN_SCORE_TO_APPLY,
+    MIN_SCORE_TO_REVIEW,
+    REMOTE_MIN_SCORE_TO_APPLY,
+)
+
 
 # ============================================================
 # CONFIG
@@ -65,32 +84,14 @@ SEARCH_URLS = [
     "https://astana.hh.kz/search/vacancy?text=Python+разработчик&area=160",
 ]
 
+# Keep the discovery area configurable even though the query list is readable.
+SEARCH_URLS = [url.replace("area=160", f"area={AREA_ASTANA}") for url in SEARCH_URLS]
+
 
 # Максимум вакансий за запуск
-MAX_TOTAL_VACANCIES = 2500
-
-# Максимум вакансий из одного поискового запроса
-MAX_VACANCIES_PER_SEARCH = 50
-
-# Обычная вакансия
-MIN_SCORE_TO_APPLY = 65
-
-# Remote-вакансия
-REMOTE_MIN_SCORE_TO_APPLY = 60
-
-# Ручная проверка
-MIN_SCORE_TO_REVIEW = 55
-
-
 # ============================================================
 # LM STUDIO
 # ============================================================
-
-LM_STUDIO_URL = "http://localhost:1234/v1/chat/completions"
-LM_MODELS_URL = "http://localhost:1234/v1/models"
-
-LM_MODEL = "qwen/qwen3-4b-2507"
-
 
 # ============================================================
 # FILES
@@ -104,9 +105,6 @@ LEGACY_SESSION_DIR = BASE_DIR / "JobHunter" / "hh_session"
 if not SESSION_DIR.exists() and LEGACY_SESSION_DIR.exists():
     SESSION_DIR = LEGACY_SESSION_DIR
 RESULTS_FILE = BASE_DIR / "results.jsonl"
-
-HH_URL = "https://astana.hh.kz/"
-
 
 # ============================================================
 # RESUME PDF ATTACHMENT
@@ -126,288 +124,11 @@ RESUME_PATH_ENG = Path(os.getenv("JOBHUNTER_RESUME_ENG", str(RESUME_PATH_ENG)))
 
 
 # ============================================================
-# CANDIDATE
-# ============================================================
-
-LEGACY_CANDIDATE_PROFILE = """
-NAME:
-Ернар
-
-LOCATION:
-Astana, Kazakhstan
-
-LEVEL:
-Junior+.
-
-TARGET ROLES:
-- AI Integration Developer
-- AI Automation Developer
-- AI Developer
-- Python Developer
-- Junior Python Developer
-- Backend Developer
-- Automation Developer
-- Backend / Automation Developer
-- LLM Integration Developer
-- Full-Stack Developer
-
-IMPORTANT:
-"AI Engineer" is NOT a preferred target role by itself.
-
-However, an "AI Engineer" vacancy may still be suitable if
-the actual work is mainly:
-- LLM integrations
-- AI assistants
-- Function Calling
-- API integrations
-- workflow automation
-- business automation
-
-COMMERCIAL EXPERIENCE:
-
-S-Dental — AI Automation Developer
-
-Confirmed commercial experience:
-- AI assistant development
-- AI-powered customer communication
-- Knowledge Base Design
-- Function Calling
-- Google Calendar integration
-- amoCRM integration
-- Kaspi API integration
-- business workflow automation
-- NextBot
-- Make
-- n8n
-
-
-PROJECT EXPERIENCE:
-
-Coffee Shop Analytics Platform:
-- Python
-- JavaScript
-- React
-- HTML5
-- CSS3
-- REST APIs
-- Google Sheets API / GViz
-- QR tracking
-- conversion analytics
-- dashboards
-- employee-level tracking
-- external platform click tracking
-- GitHub Pages
-
-
-CONFIRMED TECHNICAL SKILLS:
-
-PROGRAMMING:
-- Python
-- JavaScript
-- Node.js
-- SQL
-- Java
-- Go
-
-WEB:
-- React
-- HTML5
-- CSS3
-- REST APIs
-
-AI / LLM:
-- LLMs
-- OpenAI API
-- Prompt Engineering
-- Function Calling
-- Knowledge Base Design
-- AI Assistants
-- LLM Integrations
-
-AUTOMATION:
-- Workflow Automation
-- AI Automation
-- n8n
-- Make
-- NextBot
-
-INTEGRATIONS:
-- REST API integrations
-- CRM integrations
-- amoCRM API
-- Google Calendar API
-- Google Sheets API
-- Kaspi API
-- Robokassa API
-- Webhooks
-
-DATA / ANALYTICS:
-- SQL
-- Power BI
-- Excel
-- Google Sheets
-- Data Visualization
-- QR Tracking
-- Conversion Analytics
-
-TOOLS:
-- Git
-- GitHub
-- Linux
-- GitHub Pages
-
-EDUCATION:
-Turan-Astana University
-Faculty of Information Technologies and Cybersecurity
-Government Educational Grant
-
-LANGUAGES:
-- Russian — Fluent
-- Kazakh — Fluent
-- English — B2/B2+
-
-
-NOT CONFIRMED:
-
-The following technologies are NOT confirmed:
-
-- FastAPI
-- Django
-- Flask
-- Docker
-- Kubernetes
-- PostgreSQL
-- MySQL
-- Redis
-- MongoDB
-- AWS
-- Azure
-- GCP
-- Terraform
-- Kafka
-- LangChain
-- LangGraph
-- RAG
-- vector databases
-- PyTorch
-- TensorFlow
-- CI/CD
-- pytest
-- unittest
-- Postman
-- Requests
-- HTTPX
-
-NEVER present these as existing experience.
-
-They may be considered transferable skills when appropriate.
-
-
-ABSOLUTE RULES:
-
-Do NOT invent:
-- years of experience
-- companies
-- positions
-- technologies
-- certifications
-- responsibilities
-- commercial experience
-
-Own projects are practical/project experience,
-NOT commercial experience.
-"""
-
-# Единый профиль синхронизирован с актуальным резюме и GitHub-проектами.
-CANDIDATE_PROFILE = """
-NAME: Yernar Ibadulla
-LOCATION: Astana, Kazakhstan
-LEVEL: AI Integration & Python Backend Developer
-
-TARGET ROLES:
-- AI Integration Developer
-- Python Backend Developer
-- Backend Developer
-- Automation Developer
-- LLM Integration Developer
-- Full-Stack Developer
-
-COMMERCIAL EXPERIENCE:
-KCOI - IT Specialist, ITSM & Process Automation, 2024 - 2025
-- Incident routing automation by category and priority
-- Response time reduced from hours to 15-20 minutes
-- Repeat tickets reduced by 30%
-- Knowledge base and release-management checklists
-- MTTR reduced by 40-50%; SLA 95%+ and CSAT 4.8/5
-
-S-Dental - AI Integration & Automation Developer, 2025 - 2026
-- AI assistant development and AI-powered customer communication
-- Knowledge Base Design and Function Calling
-- Google Calendar, amoCRM and Kaspi API integrations
-- Business workflow automation with NextBot, Make and n8n
-
-Shtil Cafe - Full-stack / Automation Developer, 2026
-- QR conversion tracking and Google Sheets/GViz analytics dashboard
-- Client SPA and GitHub Pages deployment
-
-PROJECT EXPERIENCE:
-JobHunter AI:
-- Vacancy collection, deterministic filtering, scoring and local LLM analysis
-- LM Studio, Qwen, Playwright browser automation and persistent sessions
-- Cover-letter generation, JSON/JSONL persistence, deduplication and safety checks
-
-DENTARA:
-- Responsive premium dental clinic website with HTML5, CSS3 and Vanilla JavaScript
-- Services, doctors, gallery, before/after, smile simulator, FAQ and booking flow
-- OpenStreetMap integration and reduced-motion support
-
-Outreach Agent:
-- Local-first B2B sales intelligence and outreach preparation platform
-- Discovery, entity resolution, website audit, evidence and AI analysis pipeline
-- SQLite, OpenStreetMap, Nominatim, Overpass, local LM Studio and dry-run workflow
-- Provenance, CONFIRMED/INFERRED/UNKNOWN states, suppression and human review
-
-AdminFeedback:
-- Browser-based analytics dashboard for cafe feedback and QR conversion
-- HTML5, CSS3, JavaScript, Google Sheets and Google Visualization API
-
-CONFIRMED TECHNICAL SKILLS:
-- Python, JavaScript, TypeScript, SQL, Node.js
-- HTML5, CSS3, React, Vanilla JavaScript, REST APIs, Webhooks
-- FastAPI, Pydantic, HTTPX, Requests, Playwright
-- LLM Integration, OpenAI-compatible API, Prompt Engineering, Function Calling
-- Local LLM, LM Studio, Qwen, n8n, Make, NextBot
-- SQLite, PostgreSQL, JSON/JSONL, Google APIs, Power BI
-- Git, GitHub, Linux, GitHub Pages
-
-EDUCATION:
-Turan-Astana University - Information Systems and Cybersecurity
-Bachelor's Degree, State Educational Grant, 2025 - 2029
-
-LANGUAGES:
-- Russian - Fluent
-- Kazakh - Native
-- English - B2
-
-CERTIFICATION:
-HackAlem - AI & Digital Bridge 2026
-Participant, Astana, Kazakhstan, 2026
-Contributed to backend development, AI integration and product implementation.
-
-RULES:
-- Do not invent years, companies, technologies, responsibilities or certifications.
-- S-Dental and KCOI are confirmed commercial experience.
-- DENTARA, Outreach Agent, AdminFeedback and JobHunter AI are project experience.
-- Evaluate the main work and transferable foundation, not only keyword matches.
-"""
-
-
-# ============================================================
 # GLOBAL
 # ============================================================
 
 ACTIVE_MODEL = None
-APPLICATION_MODE = "auto"
+APPLICATION_MODE = DEFAULT_APPLICATION_MODE
 SESSION_LLM_INSTRUCTION = ""
 
 
@@ -1465,11 +1186,14 @@ OUTPUT
 
     "commercial_experience_required": false,
     "commercial_experience_mandatory": false,
+    "required_commercial_years": null,
 
     "matched_skills": [],
     "transferable_skills": [],
     "missing_skills": [],
     "critical_missing_skills": [],
+    "language": "ru",
+    "is_remote": false,
 
     "reason": "",
 
@@ -1623,10 +1347,13 @@ Return ONLY valid JSON.
     "hard_blocker_reason": "",
     "commercial_experience_required": false,
     "commercial_experience_mandatory": false,
+    "required_commercial_years": null,
     "matched_skills": [],
     "transferable_skills": [],
     "missing_skills": [],
     "critical_missing_skills": [],
+    "language": "ru",
+    "is_remote": false,
     "reason": "",
     "cover_letter": ""
 }
@@ -1781,13 +1508,17 @@ def parse_llm_response(text):
 
         return None
 
-    if not isinstance(
-        result,
-        dict
-    ):
+    if not isinstance(result, dict):
         return None
 
-    return result
+    try:
+        return VacancyAnalysis.model_validate(result).model_dump()
+    except Exception as e:
+        print()
+        print("ОШИБКА СХЕМЫ LLM:")
+        print(e)
+        print("Отклик отклонён без отправки заявки.")
+        return None
 
 
 # ============================================================
@@ -1826,13 +1557,29 @@ def normalize_list(value):
     ]
 
 
+def salary_below_candidate_minimum(vacancy_data):
+    """Return a blocking reason only when a published salary is explicit."""
+    minimum = CANDIDATE.get("minimum_salary")
+    if not minimum:
+        return ""
+    text = " ".join(
+        str(vacancy_data.get(key, ""))
+        for key in ("title", "description", "salary", "compensation")
+    ).lower()
+    amounts = [int(value.replace(" ", "")) for value in re.findall(r"(?<!\d)(\d{3}(?:[ .]\d{3})?)(?:\s*(?:₸|тг|тенге))", text)]
+    if amounts and max(amounts) < minimum:
+        return f"Указанная зарплата ниже минимума кандидата ({minimum:,} KZT)."
+    return ""
+
+
 # ============================================================
 # SAFETY FILTER
 # ============================================================
 
 def apply_safety_filter(
     analysis,
-    is_remote=False
+    is_remote=False,
+    vacancy_data=None
 ):
 
     if not isinstance(
@@ -1887,12 +1634,13 @@ def apply_safety_filter(
         )
     )
 
-    hard_blocker = to_bool(
-        analysis.get(
-            "hard_blocker",
-            False
-        )
-    )
+    hard_blocker = analysis.get("hard_blocker", False)
+    if not isinstance(hard_blocker, bool):
+        return {
+            "score": 0, "should_apply": False, "decision": "reject",
+            "reason": "Некорректный hard_blocker в ответе AI.",
+            "cover_letter": "",
+        }
 
     commercial_mandatory = to_bool(
         analysis.get(
@@ -1965,8 +1713,11 @@ def apply_safety_filter(
         )
     ).strip().lower()
 
+    required_commercial_years = analysis.get("required_commercial_years")
+    candidate_commercial_years = CANDIDATE.get("commercial_experience_years", 0)
+
     # --------------------------------------------------------
-    # THRESHOLD
+    # THRESHOLD AND CANDIDATE RULES
     # --------------------------------------------------------
 
     minimum_score = (
@@ -1985,6 +1736,8 @@ def apply_safety_filter(
     # Блокирует только:
     # hard_blocker = true
     # --------------------------------------------------------
+
+    salary_reason = salary_below_candidate_minimum(vacancy_data or {})
 
     if hard_blocker:
 
@@ -2010,15 +1763,7 @@ def apply_safety_filter(
                 "не соответствует профилю кандидата."
             )
 
-    elif (
-        commercial_mandatory
-        and (
-            "senior" in job_level
-            or "lead" in job_level
-            or "principal" in job_level
-            or "middle/senior" in job_level
-        )
-    ):
+    elif commercial_mandatory and required_commercial_years is not None and required_commercial_years > candidate_commercial_years:
 
         decision = "reject"
         should_apply = False
@@ -2026,10 +1771,14 @@ def apply_safety_filter(
         if not reason:
 
             reason = (
-                "Вакансия требует обязательный "
-                "коммерческий production experience "
-                "для уровня выше Junior."
+                f"Вакансия требует {required_commercial_years:g} лет коммерческого опыта, "
+                f"у кандидата подтверждено {candidate_commercial_years:g}."
             )
+
+    elif salary_reason:
+        decision = "reject"
+        should_apply = False
+        reason = reason or salary_reason
 
     elif score >= minimum_score:
 
@@ -2101,6 +1850,8 @@ def apply_safety_filter(
 
         "commercial_experience_mandatory":
             commercial_mandatory,
+
+        "required_commercial_years": required_commercial_years,
 
         "matched_skills":
             matched_skills,
@@ -2183,7 +1934,8 @@ async def analyze_vacancy(
 
     result = apply_safety_filter(
         analysis,
-        is_remote=is_remote
+        is_remote=is_remote,
+        vacancy_data=vacancy_data,
     )
 
     if result.get("should_apply"):
@@ -3824,3 +3576,4 @@ if __name__ == "__main__":
     asyncio.run(
         main()
     )
+

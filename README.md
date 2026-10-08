@@ -30,7 +30,10 @@ Normalization and vacancy deduplication
 Local LLM analysis through LM Studio
        |
        v
-Rule-based safety filter
+Pydantic schema validation
+       |
+       v
+Deterministic safety and decision engine
        |
        +--> reject / manual review
        |
@@ -65,7 +68,7 @@ Discovery intentionally has a wider scope than the final decision. A vacancy fou
 
 ## Analysis And Safety
 
-The candidate profile is embedded in `CANDIDATE_PROFILE` in `apply.py`. It contains confirmed commercial experience, portfolio projects, skills, education and language level.
+`candidate.py` is the single runtime source of truth for the structured candidate profile and its text representation. `config.py` is the single source of truth for thresholds, HH settings, LM Studio settings and application defaults. The old `profile.json` is not loaded by the production pipeline.
 
 The local model returns structured JSON with fields such as:
 
@@ -74,18 +77,24 @@ The local model returns structured JSON with fields such as:
 - `hard_blocker`;
 - matched, transferable and missing skills;
 - job level and commercial-experience requirements;
-- decision and cover letter.
+- required commercial years, language and remote status;
+- cover letter. The model's `should_apply` field is informational only.
+
+The extracted JSON is validated with the strict `VacancyAnalysis` Pydantic model. Values such as `hard_blocker: "maybe"` are invalid and cause a safe failure, so an invalid model response can never authorize an application.
 
 The rule-based safety layer then:
 
 - rejects hard blockers and unrelated directions;
 - applies separate thresholds for regular and remote vacancies;
 - rejects missing cover letters;
-- prevents unsupported commercial claims through profile rules;
+- compares mandatory commercial years with the candidate's confirmed experience independently of seniority;
+- applies explicit salary minimums when the vacancy publishes a salary below the candidate profile; unknown salary remains reviewable;
 - validates that the cover letter uses one language and matches the dominant language of the vacancy;
 - verifies that the inserted browser text exactly matches the generated letter before sending.
 
-If any validation fails, the final application button is not clicked.
+If any validation fails, the final application button is not clicked. Python owns the final APPLY, REVIEW or REJECT decision; the LLM never has authority to submit.
+
+The main runtime modules are deliberately small in responsibility: `candidate.py` (profile), `config.py` (settings), `models.py` (validated LLM schema), `apply.py` (existing orchestration and browser workflow), and `tests/` (decision checks). The legacy `filter.py` is not a second production decision engine.
 
 ## Login And Application Flow
 
