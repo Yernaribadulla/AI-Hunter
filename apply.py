@@ -470,6 +470,11 @@ def wait_for_hh_login(page):
 
 
 def choose_application_mode():
+    gui_mode = os.getenv("JOBHUNTER_GUI_MODE")
+    if gui_mode in {"auto", "manual"}:
+        print("Режим выбран GUI:", gui_mode)
+        return gui_mode
+
     print()
     print("=" * 70)
     print("РЕЖИМ ОТПРАВКИ ОТКЛИКОВ")

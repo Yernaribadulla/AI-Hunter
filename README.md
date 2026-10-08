@@ -174,6 +174,7 @@ Requirements:
 python -m venv .venv
 .venv\Scripts\activate
 pip install requests playwright openai pydantic
+pip install PySide6
 playwright install chromium
 ```
 
@@ -184,6 +185,8 @@ Start LM Studio, load `qwen/qwen3-4b-2507`, enable the local server, then run:
 ```powershell
 python apply.py
 ```
+
+To start the desktop operator interface on Windows, run `run.bat` or use `python desktop.py`. The GUI is a thin operator layer over the existing `apply.py` process; it does not duplicate LLM, safety or browser logic. The CLI remains available for development and debugging.
 
 The program prints the selected model, resume paths, search progress, analysis result, cover letter and final status for each vacancy.
 

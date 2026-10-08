@@ -10,3 +10,4 @@ output/
 build_resume.py
 build_resume_ru.py
 *.pyc
+*.log
