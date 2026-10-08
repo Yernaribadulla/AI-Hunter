@@ -171,7 +171,7 @@ Requirements:
 ```powershell
 python -m venv .venv
 .venv\Scripts\activate
-pip install requests playwright openai
+pip install requests playwright openai pydantic
 playwright install chromium
 ```
 
