@@ -4,6 +4,12 @@ Local-first job discovery, vacancy analysis, and supervised application assistan
 
 AI-Hunter combines deterministic vacancy filtering, a local LLM, Pydantic validation, Playwright browser automation, persistent JSONL state, and a confirmation-first application mode. It is designed as a portfolio project and personal job-search tool—not as unattended mass application software.
 
+## Workflow Preview
+
+This screenshot shows the collection stage: multiple search queries are processed through Playwright, vacancies are discovered and deduplicated, and the selected vacancy is opened in a persistent browser session for supervised review.
+
+![AI-Hunter vacancy collection and supervised application workflow](docs/screenshots/ai-hunter-workflow.png)
+
 ## Pipeline
 
 ```text
