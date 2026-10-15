@@ -11,3 +11,5 @@ build_resume.py
 build_resume_ru.py
 *.pyc
 *.log
+.venv/
+.ruff_cache/
