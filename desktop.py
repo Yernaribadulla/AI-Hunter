@@ -1,8 +1,6 @@
 """Thin PySide6 operator UI for the existing AI-Hunter CLI core."""
 
 import json
-import os
-import subprocess
 import sys
 import webbrowser
 import queue
@@ -10,15 +8,31 @@ import socketserver
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QProcess, Qt, QTimer
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtCore import QProcess, QProcessEnvironment, Qt, QTimer, QThread, Signal
 from PySide6.QtWidgets import (
-    QApplication, QComboBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
-    QLabel, QLineEdit, QMainWindow, QPushButton, QSplitter, QStackedWidget,
-    QTableWidget, QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget, QMessageBox,
-    QRadioButton, QButtonGroup, QInputDialog,
+    QApplication,
+    QComboBox,
+    QFormLayout,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QPushButton,
+    QSplitter,
+    QStackedWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+    QMessageBox,
+    QRadioButton,
+    QButtonGroup,
+    QInputDialog,
 )
 
+from services.client import load_history
 import config
 from candidate import CANDIDATE
 
@@ -35,13 +49,20 @@ class BridgeHandler(socketserver.StreamRequestHandler):
             response = {}
             self.server.requests.put((payload, event, response))
             event.wait()
-            self.wfile.write((json.dumps(response, ensure_ascii=False) + "\n").encode("utf-8"))
+            self.wfile.write(
+                (json.dumps(response, ensure_ascii=False) + "\n").encode("utf-8")
+            )
         except Exception as exc:
-            self.wfile.write((json.dumps({"action": "skip", "error": str(exc)}) + "\n").encode("utf-8"))
+            self.wfile.write(
+                (json.dumps({"action": "skip", "error": str(exc)}) + "\n").encode(
+                    "utf-8"
+                )
+            )
 
 
 class BridgeServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
+    daemon_threads = True
 
     def __init__(self):
         self.requests = queue.Queue()
@@ -112,11 +133,13 @@ class RunPanel(QWidget):
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
         self.process = QProcess(self)
-        env = self.process.processEnvironment()
+        env = QProcessEnvironment.systemEnvironment()
         env.insert("JOBHUNTER_GUI_MODE", self.mode.currentData())
         env.insert("JOBHUNTER_GUI_CONFIRMED", "1")
         env.insert("JOBHUNTER_GUI_EVENTS", "1")
-        env.insert("JOBHUNTER_GUI_BRIDGE_PORT", str(self.window.bridge.server_address[1]))
+        env.insert(
+            "JOBHUNTER_GUI_BRIDGE_PORT", str(self.window.bridge.server_address[1])
+        )
         self.process.setProcessEnvironment(env)
         self.process.setWorkingDirectory(str(ROOT))
         self.process.setProgram(sys.executable)
@@ -137,7 +160,7 @@ class RunPanel(QWidget):
         for line in event_lines:
             if line.startswith("__AIH_EVENT__"):
                 try:
-                    self.handle_pipeline_event(json.loads(line[len("__AIH_EVENT__"):]))
+                    self.handle_pipeline_event(json.loads(line[len("__AIH_EVENT__") :]))
                 except json.JSONDecodeError:
                     self.events.append("ERROR  Invalid pipeline event")
             elif line.strip():
@@ -147,7 +170,6 @@ class RunPanel(QWidget):
             self.events.append(text)
         if data or error:
             self.events.ensureCursorVisible()
-            self.window.refresh_history()
 
     def handle_pipeline_event(self, event):
         message = event.get("message", event.get("type", ""))
@@ -192,6 +214,17 @@ class RunPanel(QWidget):
             self.events.append("Stop requested.")
 
 
+class HistoryLoader(QThread):
+    loaded = Signal(list)
+    failed = Signal(str)
+
+    def run(self):
+        try:
+            self.loaded.emit(load_history())
+        except Exception as exc:
+            self.failed.emit(str(exc))
+
+
 class VacanciesPanel(QWidget):
     def __init__(self):
         super().__init__()
@@ -199,7 +232,9 @@ class VacanciesPanel(QWidget):
         self.filter.setPlaceholderText("Filter by title, company or decision")
         self.filter.textChanged.connect(self.apply_filter)
         self.table = QTableWidget(0, 6)
-        self.table.setHorizontalHeaderLabels(["Title", "Company", "Score", "Remote", "Decision", "Status"])
+        self.table.setHorizontalHeaderLabels(
+            ["Title", "Company", "Score", "Remote", "Decision", "Status"]
+        )
         self.table.setSortingEnabled(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -210,17 +245,26 @@ class VacanciesPanel(QWidget):
         layout.addWidget(title)
         layout.addWidget(self.filter)
         layout.addWidget(self.table, 1)
+        self.loader = None
+        self.status = QLabel()
+        layout.addWidget(self.status)
         self.load()
 
     def load(self):
-        self.table.setRowCount(0)
-        if not STATE_FILE.exists():
+        if self.loader is not None and self.loader.isRunning():
             return
-        for line in STATE_FILE.read_text(encoding="utf-8").splitlines():
-            try:
-                record = json.loads(line)
-            except json.JSONDecodeError:
-                continue
+        self.loader = HistoryLoader(self)
+        self.loader.loaded.connect(self.display_records)
+        self.loader.failed.connect(
+            lambda message: self.status.setText("History unavailable: " + message)
+        )
+        self.loader.start()
+
+    def display_records(self, records):
+        self.status.setText(f"Latest {len(records)} records")
+        self.table.setSortingEnabled(False)
+        self.table.setRowCount(0)
+        for record in records:
             vacancy = record.get("vacancy", {})
             result = record.get("result", {})
             row = self.table.rowCount()
@@ -234,19 +278,30 @@ class VacanciesPanel(QWidget):
                 result.get("status", ""),
             ]
             for column, value in enumerate(values):
-                self.table.setItem(row, column, QTableWidgetItem(value))
+                self.table.setItem(row, column, QTableWidgetItem(str(value)))
+
+        self.table.setSortingEnabled(True)
+        self.apply_filter(self.filter.text())
 
     def apply_filter(self, text):
         needle = text.lower().strip()
         for row in range(self.table.rowCount()):
             visible = not needle or any(
-                needle in (self.table.item(row, column).text().lower() if self.table.item(row, column) else "")
+                needle
+                in (
+                    self.table.item(row, column).text().lower()
+                    if self.table.item(row, column)
+                    else ""
+                )
                 for column in range(self.table.columnCount())
             )
             self.table.setRowHidden(row, not visible)
 
     def show_details(self, row, _column):
-        values = [self.table.item(row, column).text() for column in range(self.table.columnCount())]
+        values = [
+            self.table.item(row, column).text()
+            for column in range(self.table.columnCount())
+        ]
         QMessageBox.information(
             self,
             "Vacancy details",
@@ -330,7 +385,9 @@ class ModePanel(QWidget):
         back.clicked.connect(on_back)
         proceed = QPushButton("Continue")
         proceed.setObjectName("primaryButton")
-        proceed.clicked.connect(lambda: on_continue("auto" if self.auto.isChecked() else "manual"))
+        proceed.clicked.connect(
+            lambda: on_continue("auto" if self.auto.isChecked() else "manual")
+        )
         buttons = QHBoxLayout()
         buttons.addWidget(back)
         buttons.addStretch()
@@ -343,7 +400,9 @@ class ModePanel(QWidget):
         layout.addWidget(note)
         layout.addSpacing(14)
         layout.addWidget(self.manual)
-        layout.addWidget(QLabel("Review, skip or rewrite each prepared cover letter before sending."))
+        layout.addWidget(
+            QLabel("Review, skip or rewrite each prepared cover letter before sending.")
+        )
         layout.addStretch()
         layout.addLayout(buttons)
 
@@ -354,7 +413,9 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("AI-Hunter")
         self.resize(1180, 760)
         self.bridge = BridgeServer()
-        self.bridge_thread = threading.Thread(target=self.bridge.serve_forever, daemon=True)
+        self.bridge_thread = threading.Thread(
+            target=self.bridge.serve_forever, daemon=True
+        )
         self.bridge_thread.start()
         self.bridge_timer = QTimer(self)
         self.bridge_timer.timeout.connect(self.process_bridge_events)
@@ -363,7 +424,9 @@ class MainWindow(QMainWindow):
         self.vacancies = VacanciesPanel()
         self.stack = QStackedWidget()
         self.auth = AuthPanel(self.show_mode)
-        self.mode_panel = ModePanel(self.start_from_mode, lambda: self.stack.setCurrentWidget(self.auth))
+        self.mode_panel = ModePanel(
+            self.start_from_mode, lambda: self.stack.setCurrentWidget(self.auth)
+        )
         self.stack.addWidget(self.auth)
         self.stack.addWidget(self.mode_panel)
         self.stack.addWidget(self.run_panel)
@@ -378,7 +441,9 @@ class MainWindow(QMainWindow):
         for label, index in (("Run", 2), ("Vacancies", 3), ("Settings", 4)):
             button = QPushButton(label)
             button.setObjectName("navButton")
-            button.clicked.connect(lambda _checked=False, i=index: self.stack.setCurrentIndex(i))
+            button.clicked.connect(
+                lambda _checked=False, i=index: self.stack.setCurrentIndex(i)
+            )
             nav.addWidget(button)
         nav.addStretch()
         nav_frame = QFrame()
@@ -389,6 +454,20 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self.stack)
         splitter.setSizes([180, 1000])
         self.setCentralWidget(splitter)
+        self.history_timer = QTimer(self)
+        self.history_timer.timeout.connect(self.refresh_history)
+        self.history_timer.start(5000)
+
+    def closeEvent(self, event):
+        self.history_timer.stop()
+        if self.run_panel.process:
+            self.run_panel.process.terminate()
+            self.run_panel.process.waitForFinished(5000)
+        if self.vacancies.loader:
+            self.vacancies.loader.wait()
+        self.bridge.shutdown()
+        self.bridge.server_close()
+        event.accept()
 
     def process_bridge_events(self):
         try:
@@ -411,7 +490,10 @@ class MainWindow(QMainWindow):
                 instruction, accepted = QInputDialog.getText(
                     self, "Rewrite cover letter", "Instruction for the model:"
                 )
-                response.update(action="rewrite" if accepted and instruction.strip() else "skip", instruction=instruction)
+                response.update(
+                    action="rewrite" if accepted and instruction.strip() else "skip",
+                    instruction=instruction,
+                )
             else:
                 response.update(action="skip")
         event.set()
