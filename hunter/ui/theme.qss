@@ -1,0 +1,48 @@
+/* Graphite workspace / mint accent. Native controls, no remote assets. */
+QWidget { background: #101519; color: #e5eceb; font-family: "Segoe UI"; font-size: 13px; }
+QMainWindow, QScrollArea, QStackedWidget { background: #101519; }
+QLabel { background: transparent; }
+QFrame#sidebar { background: #141c20; border-right: 1px solid #293438; }
+QLabel#brand { font-size: 22px; font-weight: 700; letter-spacing: 1px; color: #f2f7f4; }
+QLabel#brandMark { color: #84e0bb; font-size: 30px; font-weight: 700; }
+QLabel#pageTitle { font-size: 25px; font-weight: 600; }
+QLabel#heroTitle { font-size: 34px; font-weight: 600; color: #f1f7f4; }
+QLabel#sectionTitle { font-size: 17px; font-weight: 600; }
+QLabel#eyebrow { color: #9db1ae; font-size: 10px; font-weight: 600; letter-spacing: 2px; }
+QLabel#muted { color: #9aaead; font-size: 12px; }
+QLabel#body { color: #c0d0cc; }
+QLabel#metricValue, QLabel#metricAccent { font-size: 37px; font-weight: 600; }
+QLabel#metricAccent { color: #84e0bb; }
+QLabel#status { color: #e5c78d; background: #30291c; border: 1px solid #58482c; border-radius: 7px; padding: 7px 12px; }
+QLabel#status[ready="true"] { color: #9fe5c5; background: #1d352c; border-color: #345749; }
+QFrame#card { background: #192226; border: 1px solid #303d40; border-radius: 12px; }
+QFrame#hero { background: #1a2c28; border: 1px solid #375148; border-radius: 12px; }
+QFrame#notice { background: #29261e; border: 1px solid #574b32; border-radius: 10px; }
+QPushButton { background: #243034; border: 1px solid #415054; border-radius: 7px; padding: 10px 16px; font-weight: 500; min-height: 18px; }
+QPushButton:hover { background: #303f42; border-color: #718b84; }
+QPushButton:pressed { background: #384c47; }
+QPushButton:focus, QComboBox:focus, QLineEdit:focus, QPlainTextEdit:focus { border: 1px solid #84e0bb; }
+QPushButton:disabled { background: #20282b; color: #6e807e; border-color: #303b3e; }
+QPushButton#primaryButton { background: #84e0bb; color: #10251d; border: 1px solid #84e0bb; font-weight: 600; }
+QPushButton#primaryButton:hover { background: #a2edcf; }
+QPushButton#primaryButton:disabled { background: #31483e; color: #97aea3; border-color: #42594d; }
+QPushButton#navButton { background: transparent; color: #a7b9b5; border: 1px solid transparent; text-align: left; padding: 12px 15px; }
+QPushButton#navButton:hover { background: #202d2f; color: #edf5f1; }
+QPushButton#navButton:checked { background: #253c33; color: #9ce5c6; border-color: #365649; }
+QComboBox, QLineEdit { background: #121b1e; border: 1px solid #405053; border-radius: 7px; padding: 10px; min-height: 19px; selection-background-color: #365b49; }
+QComboBox { padding-right: 26px; }
+QComboBox QAbstractItemView { background: #1b292b; selection-background-color: #345646; color: #edf4ef; }
+QComboBox::drop-down { border: 0; width: 24px; }
+QPlainTextEdit, QTextBrowser { background: #111a1e; border: 1px solid #334246; border-radius: 8px; padding: 12px; selection-background-color: #365b49; }
+QPlainTextEdit#eventLog { font-family: "Cascadia Mono", "Consolas"; font-size: 12px; color: #b5c8c1; }
+QTableView { background: #162024; alternate-background-color: #1b272b; border: 1px solid #334246; border-radius: 9px; gridline-color: #2b393c; selection-background-color: #304c40; selection-color: #f4fff7; }
+QTableView::item { padding: 9px; border-bottom: 1px solid #29363a; }
+QHeaderView::section { background: #202d31; color: #b4c9c1; border: 0; border-bottom: 1px solid #42554f; padding: 12px; font-size: 11px; font-weight: 600; }
+QProgressBar { border: 0; background: #101a1b; border-radius: 3px; min-height: 6px; max-height: 6px; }
+QProgressBar::chunk { background: #84e0bb; border-radius: 3px; }
+QScrollBar:vertical { background: #142024; width: 9px; margin: 0; }
+QScrollBar::handle:vertical { background: #415650; min-height: 30px; border-radius: 4px; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+QSplitter::handle { background: #303f40; height: 1px; width: 1px; }
+QDialog { background: #172125; }
+QToolTip { color: #eff8f2; background: #273e34; border: 1px solid #618372; padding: 6px; }
