@@ -1,5 +1,4 @@
-requests
+-r requirements-services.txt
 playwright
 openai
-pydantic
 PySide6

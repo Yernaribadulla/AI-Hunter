@@ -1,0 +1,16 @@
+services:
+  analysis:
+    build: .
+    ports: ["127.0.0.1:8011:8011"]
+    environment:
+      LM_BASE_URL: http://host.docker.internal:1234/v1
+    extra_hosts: ["host.docker.internal:host-gateway"]
+  history:
+    build: .
+    command: ["python", "-m", "uvicorn", "services.history:app", "--host", "0.0.0.0", "--port", "8012"]
+    ports: ["127.0.0.1:8012:8012"]
+    environment:
+      JOBHUNTER_DB: /data/history.sqlite3
+    volumes: ["history:/data"]
+volumes:
+  history:

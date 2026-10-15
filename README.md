@@ -1,80 +1,107 @@
 # AI-Hunter
 
-Local-first job discovery, vacancy analysis, and supervised application assistant for HeadHunter.
+Локальный помощник для поиска вакансий HeadHunter, анализа через LM Studio и отправки откликов под контролем пользователя. Python принимает окончательное решение; LLM предлагает оценку и письмо.
 
-AI-Hunter combines deterministic vacancy filtering, a local LLM, Pydantic validation, Playwright browser automation, persistent JSONL state, and a confirmation-first application mode. It is designed as a portfolio project and personal job-search tool—not as unattended mass application software.
+![Рабочий процесс](docs/screenshots/ai-hunter-workflow.png)
 
-## Workflow Preview
+## Архитектура
 
-This screenshot shows the collection stage: multiple search queries are processed through Playwright, vacancies are discovered and deduplicated, and the selected vacancy is opened in a persistent browser session for supervised review.
+Монолит разделён на два независимо запускаемых HTTP-сервиса и приложение оператора:
 
-![AI-Hunter vacancy collection and supervised application workflow](docs/screenshots/ai-hunter-workflow.png)
-
-## Pipeline
-
-```text
-Discovery queries → HH collection → normalization/deduplication → local LLM analysis
-→ Pydantic validation → deterministic safety decision → letter validation
-→ automatic or confirmation-first application → persistent JSONL log
+```mermaid
+flowchart LR
+    Operator[Desktop / CLI] --> Browser[Playwright / HeadHunter]
+    Operator --> Analysis[Analysis API :8011]
+    Analysis --> LM[LM Studio :1234]
+    Analysis --> Policy[Pydantic / safety.py]
+    Operator --> History[History API :8012]
+    History --> DB[(SQLite)]
 ```
 
-The LLM proposes structured analysis; Python owns the final decision. Hard blockers, missing cover letters, language mismatches, salary constraints, duplicate applications, and invalid model output are handled by deterministic checks.
+| Компонент | Ответственность |
+| --- | --- |
+| `services/analysis.py` | API анализа, проверка модели, последовательные запросы к GPU |
+| `services/analysis_core.py`, `services/prompts.py` | Промпты, проверка ответа и языка письма |
+| `safety.py`, `models.py` | Пороги, опыт, зарплата и блокирующие условия |
+| `services/history.py` | Транзакции SQLite, индекс обработанных ID, пагинация |
+| `services/client.py` | HTTP-клиент с таймаутами и обработкой отказов |
+| `apply.py` | Сбор вакансий, браузер, подтверждение и отправка |
+| `desktop.py` | Интерфейс; последние 500 записей загружаются в фоновом потоке |
 
-## Main capabilities
+Сервисы используют общий репозиторий и отдельные процессы. Только history владеет базой. Браузер работает на компьютере пользователя. Поддерживается один оператор на аккаунт/профиль браузера. API предназначены для доверенной локальной машины, не имеют аутентификации и по стандартным командам слушают только loopback.
 
-- Related-title discovery for Python, backend, AI integration, LLM, API, CRM, automation, and full-stack roles.
-- Local analysis through an OpenAI-compatible LM Studio endpoint.
-- Structured `VacancyAnalysis` validation with Pydantic.
-- Transferable-skill and commercial-experience matching.
-- Russian/English cover-letter generation and language validation.
-- Duplicate protection through persistent local status records.
-- Automatic mode or confirmation-first mode before each final application click.
-- Persistent Playwright browser session with user-controlled login and CAPTCHA handling.
+## Установка и запуск
 
-## Safety model
-
-The project does not bypass CAPTCHA or anti-bot controls. Browser sessions, cookies, resumes, vacancy history, generated letters, and local model data remain local. Never commit credentials, tokens, cookies, `hh_session`, `results.jsonl`, resumes, or exported vacancy datasets.
-
-The confirmation-first mode shows the generated letter before submission. A successful browser click is not treated as proof that HH recorded the application; uncertain and send-error states require manual verification.
-
-## Local LLM
-
-- Model: `qwen/qwen3-4b-2507`
-- Endpoint: `http://localhost:1234/v1/chat/completions`
-- Request timeout: 300 seconds
-
-## Requirements
-
-- Windows, Python 3.11+, Requests, Playwright, Pydantic
-- PySide6 for the desktop operator interface
-- Chromium installed for Playwright
-- LM Studio with an OpenAI-compatible local endpoint
-
-## Installation
+Требования: Python 3.11+, LM Studio с загруженной моделью, Chromium для Playwright; Desktop использует PySide6. Docker необязателен.
 
 ```powershell
+git clone https://github.com/Yernaribadulla/AI-Hunter.git
+cd AI-Hunter
 python -m venv .venv
-.venv\Scripts\activate
-pip install requests playwright openai pydantic
-pip install PySide6
-playwright install chromium
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+python run_services.py
 ```
 
-## Run
+Перед поиском включите Local Server в LM Studio. Модель по умолчанию — `qwen/qwen3-4b-2507`; при её отсутствии выбирается первая доступная. OpenAI API key не требуется.
 
-Start LM Studio, load the configured model, enable the local server, then run `python apply.py`. For the desktop operator interface, run `python desktop.py`.
+Launcher запускает оба сервиса, ждёт их готовности и открывает Desktop; после выхода останавливает созданные процессы. На Windows доступен `run.bat`. CLI: `python run_services.py --cli`. Только сервисы: `python run_services.py --services-only`, затем в другом терминале `python desktop.py` или `python apply.py`.
 
-The workflow opens a persistent browser, waits for the user to log in and complete interactive checks, asks for the application mode, then processes vacancies under the selected safety policy.
+Первый запуск создаёт `hh_session/`. Войдите в HH и завершите интерактивные проверки в браузере. Выберите автоматическую отправку или подтверждение каждого отклика. CAPTCHA проходит пользователь.
 
-## Testing
+## Независимый запуск
+
+В отдельных терминалах из корня репозитория:
 
 ```powershell
-python -m compileall -q apply.py
-python -m unittest discover -s tests -v
+python -m uvicorn services.analysis:app --host 127.0.0.1 --port 8011
+python -m uvicorn services.history:app --host 127.0.0.1 --port 8012
+python desktop.py
 ```
 
-The browser workflow should be tested with sending disabled or under manual supervision.
+Альтернатива: `docker compose up --build -d`, затем `python desktop.py` на хосте. LM Studio должна быть доступна контейнеру через `host.docker.internal:1234`; настройте соответствующий интерфейс прослушивания в LM Studio. SQLite сохраняется в volume `history`. Остановка: `docker compose down`; флаг `-v` удалит историю. Не запускайте Compose и launcher одновременно на тех же портах.
 
-## Project status
+## Настройки
 
-AI-Hunter V2 is an active portfolio project suitable for local experimentation and supervised applications. It is not a production recruitment platform, does not guarantee correct decisions, and should not be used for unattended mass outreach.
+| Переменная окружения | По умолчанию |
+| --- | --- |
+| `LM_BASE_URL` | `http://localhost:1234/v1`, для analysis |
+| `LM_MODEL` | `qwen/qwen3-4b-2507` |
+| `JOBHUNTER_ANALYSIS_URL` | `http://127.0.0.1:8011`, для клиента |
+| `JOBHUNTER_HISTORY_URL` | `http://127.0.0.1:8012`, для клиента |
+| `JOBHUNTER_DB` | `data/history.sqlite3` в корне проекта |
+
+`.env` автоматически не загружается. Пороги и HH настраиваются в `config.py`, опыт и профиль — в `candidate.py`. Замените персональный профиль на свой. Таймаут генерации 300 секунд, клиента analysis — 310 секунд. После изменения конфигурации перезапустите процессы. Launcher использует стандартные порты; для других портов запускайте uvicorn самостоятельно.
+
+## API и перенос истории
+
+OpenAPI: [analysis](http://127.0.0.1:8011/docs), [history](http://127.0.0.1:8012/docs).
+
+| Метод | Путь | Назначение |
+| --- | --- | --- |
+| GET | `:8011/health` | Жив ли сервис |
+| GET | `:8011/ready` | Доступна ли модель |
+| POST | `:8011/v1/analyze` | Тело: `{vacancy: {title, description}, instruction}` |
+| GET | `:8012/health` | Открыть/проверить базу |
+| GET | `:8012/v1/processed` | Заблокированные ID |
+| POST | `:8012/v1/records` | Запись `{timestamp, vacancy, result}` |
+| GET | `:8012/v1/records?limit=500&before=123` | От новых к старым; before — ID последней записи предыдущей страницы |
+
+При работающем history выполните один раз: `python -m services.migrate results.jsonl`. Исходный файл сохраняется. Повторный импорт добавляет повторные строки, но ID блокировок не дублируются. После сетевого сбоя импорт мог выполниться частично.
+
+Перед потенциальной отправкой сохраняется `submission_pending`. Статусы `applied`, `already_applied`, `rejected_by_ai`, `submission_pending`, `unknown`, `send_error` блокируют повторную обработку. Последующая ошибка формы автоматически не снимает блокировку. Неопределённый результат проверьте вручную в HH; интерфейс снятия блокировки пока не реализован. Ошибка записи истории останавливает дальнейшую работу. Резервируйте SQLite при остановленном history.
+
+Исполняемые скрипты `JobHunter/` перенаправляют запуск на корневую реализацию. Старые вспомогательные модули и пользовательские файлы сохранены; разрабатывайте и запускайте тесты из корня репозитория.
+
+## Проверки
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python -m unittest discover -s tests -v
+python -m compileall -q apply.py desktop.py services run_services.py
+```
+
+Тесты не обращаются к HH и LM Studio. Проверяются правила решений, приоритет Python над LLM, язык письма, зарплата с точками, HTTP-контракты, сохранение блокировок, пагинация и отказ от клика при ошибке записи. CI выполняет тесты на Windows/Linux и Python 3.11/3.12.
+
+Проект остаётся персональным инструментом: реальная работа зависит от разметки HH и качества модели. Браузерные сессии, база, резюме и экспорт вакансий содержат персональные данные. Реальную отправку проверяйте под ручным контролем.

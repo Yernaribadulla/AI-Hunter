@@ -1,20 +1,20 @@
 @echo off
 cd /d "%~dp0"
 if exist ".venv\Scripts\python.exe" (
-  ".venv\Scripts\python.exe" "desktop.py"
+  ".venv\Scripts\python.exe" "run_services.py"
   exit /b %errorlevel%
 )
 
 where py >nul 2>nul
 if %errorlevel% equ 0 (
-  py -3 "desktop.py"
+  py -3 "run_services.py"
   if %errorlevel% neq 0 pause
   exit /b %errorlevel%
 )
 
 where python >nul 2>nul
 if %errorlevel% equ 0 (
-  python "desktop.py"
+  python "run_services.py"
   if %errorlevel% neq 0 pause
   exit /b %errorlevel%
 )

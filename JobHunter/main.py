@@ -1,39 +1,9 @@
-from hh_api import HHApi
+"""Compatibility launcher; canonical implementation lives at repository root."""
+import runpy
+import sys
+from pathlib import Path
 
-
-SEARCH_QUERIES = [
-    "Python",
-    "AI",
-    "Automation",
-    "Backend",
-    "BI",
-    "ETL",
-    "Support Engineer",
-    "QA",
-]
-
-
-def main() -> None:
-    api = HHApi()
-
-    for query in SEARCH_QUERIES:
-        print(f"\n=== {query} ===")
-
-        result = api.search_vacancies(
-            text=query,
-            area="159",
-            per_page=10,
-        )
-
-        print(f"Найдено: {result['found']}")
-
-        for vacancy in result["items"]:
-            print(
-                f"{vacancy['name']} | "
-                f"{vacancy['employer']['name']} | "
-                f"{vacancy['alternate_url']}"
-            )
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(root))
+    runpy.run_path(str(root / 'main.py'), run_name='__main__')
